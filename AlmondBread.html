@@ -1,0 +1,983 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>AlmondBread 0.22</title>
+</head>
+
+<body>
+<h1>AlmondBread 0.22</h1>
+
+<h2>Introduction</h2>
+
+<p>
+<em>AlmondBread</em> is yet another program which calculates and displays images
+of the Mandelbrot set.<b>
+<br>
+</b>It is certainly not as versatile as e.g. 
+<b>Fractint</b>, but I think it can be fun to play with nonetheless, particularly
+because of its nice interface (courtesy of 
+<b>Tcl/Tk</b>), fast algorithms and flexible colormap handling. Here are some
+more of 
+<em>AlmondBread</em>'s features:
+<p>
+- Fast algorithms, among them an implementation of 
+<b>Simultaneous Orbit Iteration</b>
+<br>
+<b>   </b>
+(see 
+<a href="#Drawing_Methods">Drawing Methods</a>).
+<br>
+- Save/Load 
+<b>Fractint</b>-compatible GIF files (see 
+<a href="#The_File_Menu">The File Menu</a>).
+<br>
+- Load 
+<b>Fractint</b>-style colormap files (<tt>.MAP</tt> files).
+<br>
+- Shared or own colormap using an allocation scheme similar to
+that of 
+<tt>xv(1)</tt>
+<br>
+  
+<b> </b>
+(see 
+<a href="#The_Colormap_Menu">The Colormap Menu</a>).
+<br>
+- Easy-to-use zoombox function (see 
+<a href="#The_Zoombox">The Zoombox</a>).
+<p>
+<em>AlmondBread</em> was written by Michael Ganss, rms@cs.tu-berlin.de.
+<br>
+Please contact me if you discover any bugs, have fixes for them
+or any other ideas that might aid in the improvement of this software,
+including favorable comments as well.
+<br>
+For copyright information see 
+<a href="#Copyright">Copyright</a>.
+<h2>Invocation</h2>
+<em>
+<p>
+</em>	<b>almond</b> [fileName] [-colormap new] [-display 
+<i>display</i>]
+<br>
+	[-geometry 
+<i>geometry</i>] [-name 
+<i>name</i>] [-sync] [-visual 
+<i>visual</i>] 
+<br>
+	[-help]<tt> </tt>
+[--]
+<p>
+The options are as follows:
+<p>
+<b>fileName</b>
+<br>
+<b>	</b>Read commands from 
+<b>fileName</b> rather than standard input.<b>
+<br>
+</b>
+<br>
+<b>-colormap new</b>
+<br>
+	Specifies<b> </b>
+that the interface window should have<b> </b>
+a new private colormap
+<br>
+	instead of using<b> </b>
+the default colormap for the<b> </b>
+screen.<b>
+<br>
+</b>
+<br>
+<b>-display</b> 
+<i>display</i>
+<br>
+	Display (and screen) to use.
+<br>
+	
+<br>
+<b>-geometry</b> 
+<i>geometry</i>
+<br>
+	Initial geometry to use for the interface window. If this option
+is specified, its 
+<br>
+	value is stored in the 
+<b>geometry</b> global variable of 
+<em>AlmondBread</em>'s Tcl
+<br>
+	interpreter.
+<p>
+<b>-name</b> 
+<i>name</i>  
+<br>
+	Use 
+<i>name</i> as the title to be displayed in the interface<b> </b>
+window, and as the 
+<br>
+	name of the interpreter for 
+<b>send</b> commands.
+<p>
+<b>-sync</b>      
+<br>
+	Execute all X server commands synchronously, so that errors
+are reported 
+<br>
+	immediately. This will result in much slower execution, but
+it is useful for 
+<br>
+	debugging.
+<p>
+<b>-visual</b> 
+<i>visual</i><b>
+<br>
+</b>	Specifies the visual to use for the interface window. 
+<i>Visual</i> may have any of
+<br>
+	the forms supported by the 
+<tt>Tk_GetVisual</tt> procedure.
+<br>
+	
+<br>
+-<b>help</b>      
+<br>
+	Print a summary of the command-line options and exit.
+<br>
+<i>
+<br>
+</i><b>--
+<br>
+	</b>Pass all remaining arguments through to the script's 
+<b>argv</b> variable without
+<br>
+	interpreting them. This provides a mechanism for passing arguments
+such
+<br>
+	as 
+<b>-name</b> to a script instead of having 
+<em>AlmondBread </em>
+interpret them.
+<p>
+You can abbreviate all options, e.g. 
+<b>-n</b> is as good as 
+<b>-name</b>.
+<p>
+Once you have succesfully started the program in interactive mode,
+i.e. without the initial 
+<b>fileName</b> option and not from within a script, you are in a Tcl shell
+which you can type regular Tcl commands to. There are a number
+of Tcl variables that you can manipulate in order to influence
+<em>AlmondBread</em>'s behavior. I'll try to mention their names at the appropriate
+places.
+<p>
+If you start 
+<em>AlmondBread</em> in interactive mode, the file 
+<tt>~/.almondrc</tt> will be sourced at the beginning (if it exists). The variable
+<b>abdir</b> holds a directory name, which decides where 
+<em>AlmondBread</em> looks to find its startup 
+<tt>.tcl</tt> files. Its default value is 
+<tt>~/.tk</tt>.
+<p>
+In order for 
+<em>AlmondBread</em> to work at all, you need to make sure that you have the 
+<b>jstools</b>-package installed on your system (either in the default Tk library
+directory or in 
+<tt>~/.tk</tt>). But since you are probably reading this via<b> jdoc</b>, there's not much point in telling you this now. More information
+about 
+<b>jstools</b> is available at 
+<a href="http://www.cs.uoregon.edu/docs/jstools/jstools.html">http://www.cs.uoregon.edu/docs/jstools/jstools.html</a>.
+<h2><a name="The_Mandelbrot_Set">The Mandelbrot Set</a></h2>
+
+<p>
+This section describes some of the basic mathematical concepts
+behind the Mandelbrot set and its generation.
+<p>
+The Mandelbrot set - or 
+<i>M</i> - was discovered in 1980 by mathematician Benoit B. Mandelbrot.
+It is considered to be the most complex object mathematics has
+ever seen 
+<a href="#Peitgen">[1]</a>.
+<p>
+In 
+<a href="#Shirriff">[2]</a> 
+<i>M</i> is defined as follows:
+<br>
+"The Mandelbrot set is the set of all complex numbers c such
+that iterating z -&gt; z² +c does not go to infinity (starting
+with z=0)". 
+<br>
+It can be shown that the sequence diverges if the magnitude of
+z exceeds 2.
+<h3>The Algorithm</h3>
+
+<p>
+The basic algorithm to generate an image of 
+<i>M</i> and its basin of attraction for a given region R in the complex
+plane goes like this:
+<br>
+For each pixel p representing a point c in R do the following:
+<p>
+1. z := 0, n := 0.
+<br>
+2. z := z²+c.
+<br>
+3. n := n+1.
+<br>
+4. If |z|&lt;2 and n&lt;N go to 2.
+<p>
+N is the maximum number of iterations you allow (smaller values
+mean faster execution, larger ones better accuracy). It can be
+set by either modifying the variable 
+<b>maxiter</b>, or using the interface entry in the 
+<b>Options</b> submenu of the 
+<a href="#Iteration_Methods">Iteration Methods</a> menu.
+<br>
+If the iteration loop terminates because n&gt;=N, there is a
+good chance c lies in 
+<i>M</i>, so you can color p accordingly. In 
+<em>AlmondBread</em>, the variable<b> inside</b>, accessible through the 
+<b>Options</b> submenu of the 
+<a href="#Coloring_Schemes">Coloring Schemes</a> menu, controls how pixels in 
+<i>M</i> are colored. The value is an index into the colormap and thus
+ranges from 0-255.
+<br>
+If, however, |z|&gt;=2 then p lies outside of 
+<i>M</i> and you can color p according to the number of iterations when
+z "bailed out", i.e. according to n. In 
+<em>AlmondBread</em>, pixels outside of 
+<i>M</i> are colored "n mod colors", where 
+<b>colors</b> is a Tcl variable that is initially set to the number of colors
+available on the X screen, but can be modified to limit the actually
+used colors to a smaller range (not something you would normally
+want to do). It is also set if an image is loaded that uses a
+smaller number of colors (e.g. a 
+<b>Fractint</b> image that was created in a VGA mode such as 640x480x16).
+<br>
+The region R can be defined through the interface by using the
+entries 
+<b>left</b>, 
+<b>right</b>, and 
+<b>bottom</b>. The top is set automatically to ensure that each pixel covers
+a square area in the complex plane, i.e. there is no distortion.
+You can, however, force a different value by setting the variables
+<b>minr</b>, 
+<b>maxr</b> (the minimum and maximum value on the real axis) and 
+<b>mini</b>, 
+<b>maxi</b> (ditto for the imaginary axis). 
+<b>minr</b>, 
+<b>maxr</b> correspond directly to left, right, whereas 
+<b>mini</b>, 
+<b>maxi</b> are defined as (-<b>top</b>), (-<b>bottom</b>) respectively. This is due to implementational reasons (pixel
+values always start from the top left, whereas the cartesian plane
+starts on the bottom left).
+<br>
+Although it is safe to assume that a point whose magnitude is
+larger than 2 lies outside 
+<i>M</i>, you can adjust the bailout value through the variable 
+<b>bailout</b> or its corresponding entry<b> </b>
+in the 
+<b>Options</b> submenu of the 
+<a href="#Iteration_Methods">Iteration Methods</a> menu. Higher values will yield smoother boundaries.
+<br>
+Generating an image in 
+<em>AlmondBread</em> is a three-layered process. First, one of the 
+<a href="#Drawing_Methods">Drawing Methods</a> determines how a set of pixels is computed. The 
+<a href="#Iteration_Methods">Iteration Methods</a> define the way an individual iteration is carried out. Thus,
+they pertain only to the generation of a single pixel (as you
+will see, 
+<b>SOI</b> makes an exception from this rule). Finally, the 
+<a href="#Coloring_Schemes">Coloring Schemes</a> determine how a single pixel is colored once iteration for
+it is complete.
+<h3>References</h3>
+
+<p>
+[1]	Peitgen, H.-O., Saupe, D., et al.
+<br>
+	<i>The Science of Fractal Images</i>
+<br>
+	Springer Verlag, Berlin, 1988
+<br>
+	
+<br>
+[2]	Shirriff, K.
+<br>
+	<i>The sci.fractals FAQ</i>
+<br>
+	Posted monthly on 
+<tt>sci.fractals</tt>, 
+<tt>news.answers</tt>
+<br>
+	<a href="http://spanky.triumf.ca/pub/fractals/docs/SCI_FRACTALS.FAQ">http://spanky.triumf.ca/pub/fractals/docs/SCI_FRACTALS.FAQ</a>
+<p>
+For more on the subject, I can also recommend:
+<p>
+	Peitgen, H.-O., Richter, P.H.
+<br>
+	<i>The Beauty of Fractals</i>
+<br>
+	Springer Verlag, Berlin, 1986<i>
+<br>
+</i>
+<br>
+	Giffin, Noel
+<br>
+	The Spanky Fractal Database
+<br>
+	contains all the information you'll ever need about fractals
+<br>
+	<a href="http://spanky.triumf.ca/">http://spanky.triumf.ca/</a>.
+<h2><a name="The_File_Menu">The File Menu</a></h2>
+<i>
+<p>
+</i>Besides using the mouse the File Menu can be invoked by pressing
+Alt-f (the Alt key may have a different name on your keyboard,
+but it is synonymous with the mod2 key modifier; consult 
+<tt>xmodmap(1)</tt> if you are unsure) or F10.
+<h3>Loading a file</h3>
+
+<p>
+If you invoke the menu entry 
+<b>Load</b>, you will be prompted for a file name. I assume you know how
+a file browser works. One feature worth mentioning, though, is
+<b>Emacs</b>-style name completion (or at least a subset thereof) with the
+Tab-key.
+<br>
+You can load any 
+<b>GIF</b> file. If it has a 
+<b>Fractint</b> application extension (meaning a file that was saved by a program
+of the 
+<b>Fractint</b> family), it is recognized as well and all parameters that are
+supported by 
+<em>AlmondBread</em> are set automatically (like 
+<b>maxiter</b>, 
+<b>inside</b> etc.). If the fractal type is anything other than mandel or
+mandelfp, the file will be treated like an ordinary 
+<b>GIF</b>, i.e. the extension will be disregarded. In this case, all picture
+information will be lost once you hit the 
+<b>GO</b> button, and the same image as before the load will be generated
+(albeit with a different resolution and/or colormap).
+<h3>Saving a file</h3>
+
+<p>
+This works analogous to the 
+<b>Load</b> operation. The file saved will be in GIF89 format with a 
+<b>Fractint</b> application extension. The data structure used by 
+<em>AlmondBread</em> corresponds to the one used in 
+<b>Fractint</b> version 18.2, although you should be able to read the file
+with any version later than 14. All parameters that are not supported
+by 
+<em>AlmondBread</em> are set to default values.
+<h3>Quit</h3>
+
+<p>
+Invoking this menu option will close all windows and terminate
+<em>AlmondBread</em>.
+<br>
+<em></em>
+<h2><a name="The_Colormap_Menu">The Colormap Menu</a></h2>
+<em></em>
+<h3>Own Colormap</h3>
+
+<p>
+If this checkbutton is switched "on", 
+<em>AlmondBread</em> will install its own colormap for displaying the generated
+image. On an 8-Bit Display, this means 
+<em>AlmondBread</em> will have 256 colormap entries at its disposal, no matter how
+many other programs occupy resources in the shared colormap. Therefore,
+the subsequent color allocation will typically succeed in getting
+all the colors it wants (color allocation is necessary, because
+even though we have a new, empty colormap it is possible this
+colormap has less than 256 entries, e.g. on a 6-Bit display).
+On the other hand, you will notice that once a window other than
+<em>AlmondBread</em> has the focus its colormap (usually the shared colormap) is
+installed, thus f-ing up 
+<em>AlmondBread</em>'s colors (of course this goes the other way round, too).
+<br>
+The command that is attached to the checkbutton does nothing more
+than configure the raster widget in the image window like this:
+<tt>.r conf -owncmap yes</tt> (metaphorically speaking... Of course there is some extra code
+for status output etc.). The real work is done by the widget routines.
+<br>
+If the checkbutton gets switched "off" (this is the default),
+<em>AlmondBread</em> will allocate its colors from the shared colormap, which is
+used by many other X clients as well (e.g. your window manager)
+and therefore oftentimes does not provide enough "free" entries
+to suit the needs of 
+<em>AlmondBread</em>'s colormap. Hence a method needs to be employed to use the resource
+"colors" in an efficient manner, making generated images resemble
+their imaginary counterparts with an own colormap as closely as
+possible. 
+<em>AlmondBread</em> uses an algorithm similar to that in John Bradley's 
+<b>xv</b> program 
+<a href="#Bradley">[1]</a>. First, it arranges the 256 original colors in order of importance
+using the 
+<b>diversity algorithm</b>. Then, it tries to allocate those colors. In the next phase,
+for each color that went unallocated the algorithm tries to allocate
+the color that is closest in the X colormap. Finally, all colors
+that are still unallocated by now are mapped into those that were
+successfully allocated in previous phases.
+<br>
+The status line at the bottom of 
+<em>AlmondBread</em>'s interface will tell you how many colors were allocated in which
+phase.
+<h3>Show Colormap</h3>
+
+<p>
+If you switch this checkbutton "on", a window showing the current
+colormap used by 
+<em>AlmondBread</em> will pop up. It contains a raster widget whose 
+<tt>owncmap</tt> option is coupled to that of the main raster widget, so you
+will see the correct colormap even if owncmap is in use. The colors
+are displayed in order from top left (0) to bottom right (255).
+You can remove the window by either unselecting the checkbutton
+or clicking on button #<tt>3</tt> in the window.
+<h3>Loading a Colormap</h3>
+
+<p>
+If you select this option, you will be prompted for the name of
+a colormap file. This file should be in the<b> Fractint</b> 
+<tt>.map</tt> format, i.e. a text file containing one color per line with
+RGB values ranging from 0-255 (to put it another way, entries
+should be readable with 
+<tt>fscanf(file, "%d %d %d", &amp;r, &amp;g, &amp;b)</tt>, so this is a valid line: "0 0 255 Blue").
+<br>
+If a file has fewer than 255 entries, the missing ones are assumed
+to be all black.
+<h3>References</h3>
+
+<p>
+[1]	Bradley, John (bradley@cis.upenn.edu)
+<br>
+	<i>xv Manual</i>
+<br>
+	Appendices E and F<i>
+<br>
+	</i><a href="ftp://ftp.cis.upenn.edu/pub/xv/">ftp://ftp.cis.upenn.edu/pub/xv/</a>
+<br>
+<b>
+<br>
+</b>
+<h2><a name="Drawing_Methods">Drawing Methods</a></h2>
+
+<p>
+You can select any of the drawing methods described below by selecting
+the corresponding radiobutton in the user interface or by setting
+the variable 
+<b>method</b> to one of the values 0-3.
+<br>
+0 means 
+<b>scan</b> and 3 will select 
+<b>SOI</b>.<b> </b>
+Selecting the 
+<b>Options</b> entry will pop up a window containing entries that control
+variables for the currently selected drawing method.
+<h3>Scan</h3>
+
+<p>
+This is the simplest method of generating an image of 
+<i>M</i>. As its name suggests, this algorithm simply scans the chosen
+region from top to bottom, doing a complete iteration for each
+pixel on the screen (well, at least half the pixels, since for
+most coloring schemes the symmetrical properties of the generated
+image can be taken advantage of). The complexity of the algorithm
+is in O(n²), where n is proportional to the side length of the
+image. For implementational details check out the file 
+<tt>scan.c</tt>.
+<h3>Interleave</h3>
+
+<p>
+This algorithm is significantly faster than the 
+<b>Scan</b> algorithm. However, it can be inaccurate to some extent. The
+idea is the following: For each i consecutive pixels, compute
+only one. If its color matches that of the previous computed pixel,
+assume all i are of same color and go on. If not, go back one
+pixel at a time until it matches the "saved" color (plotting
+each of those different colored pixels along the way, of course).
+Now, plot the whole line of unique color defined by the first
+point of "saved" color and the last. The parameter i can be
+controlled through the variable 
+<b>interleave</b> or the 
+<b>Options</b> submenu.
+<br>
+Obviously, this is very fast for images containing large areas
+of a single color, but may err in images with fine filaments extending
+through areas of few colors. Thus, it follows the same policy
+as 
+<b>Fractint</b>'s 
+<b>solid-guessing</b> logic. Its complexity is O(c * n²), with 
+<tt>1/i&lt;=</tt>c&lt;=1. For further details, check out 
+<tt>interleave.c</tt>.
+<h3>Tesseral</h3>
+
+<p>
+This method is an imitation of 
+<b>Fractint</b>'s mode of same name. Although in most cases it is not as fast
+as 
+<b>Interleave</b>, it has a nice theoretical approach and is fun to look at. It
+makes use of the Mandelbrot set's connectedness property, which
+has as a consequence that there cannot be a region of one color
+inside a rectangle of another color, i.e. once you find that the
+sides of a rectangular region are of a single color, it is safe
+to assume the whole rectangle to be of said color (with some margin
+of error, of course, since strictly speaking one pixel defines
+a region, not just one point). The procedure used to generate
+the image is this:
+<p>
+1. Compute the border of the region, keeping track of the number
+of colors used.
+<br>
+2. If only one color was used, we assume the whole region to be
+of that color and "blit" it in.
+<br>
+3. If more than one color was used, we subdivide the image into
+2 smaller ones and calculate them recursively (stopping at a certain
+minimum side length, beyond which we use scanning to finish up
+the image. This minimum side length can be modified through the
+variable 
+<b>goscanat</b> or the 
+<b>Options</b> menu).
+<p>
+There are some details I think are worth elaborating on. First,
+<em>AlmondBread</em>'s algorithm subdivides at least once to avoid "blitting" in
+the initial image. Secondly, it skips computing those edges of
+the image that were already done in the previous stage (which
+is either 3 or all 4 using the "DIN" approach). Thirdly, 
+<em>AlmondBread</em> uses the "DIN" approach to subdividing the image (I call
+it that because of the way paper sizes in the DIN system are related,
+e.g. DIN A5 is half the size of DIN A4). This means simply that
+subdividing in horizontal or vertical direction is done in alternating
+fashion, which has proven to be very efficient over other methods
+like 4-way splitting.
+<br>
+The complexity of the 
+<b>Tesseral</b> algorithm is in O(n * log(n)). The code is located in 
+<tt>tesseral.c</tt>.
+<h3>Boundary Tracing</h3>
+
+<p>
+The 
+<b>Boundary Tracing</b> method takes the idea that led to the 
+<b>Tesseral</b> algorithm one step further. The fact that the Mandelbrot set
+is connected, implies that there won't be areas of one color "inside"
+areas of a different color. This means, that if you trace the
+boundary of a region of a single color, i.e. determine the connected
+set of pixels of one color whose members have at least one neighboring
+pixel of a different color, all the pixels inside that area will
+have that one color also. Color in this context refers to the
+iteration value of a single pixel. The algorithm is this:
+<br>
+We scan the whole screen pixel by pixel, keeping an offscreen
+map of iteration values for each pixel (initially set to all -1s
+to signal "not done"). If we hit a pixel not done, we start
+tracing its border going right and keeping the "wall" to our
+left until we get back to the starting point. For each pixel,
+the next pixel visited will be computed thus:
+<p>
+a) check pixel to left (looking in the current direction, i.e.
+if the current direction is right, the pixel to the left is the
+one above it). If it's part of the wall (i.e. offscreen or a different
+color than the one we're tracking), go to b). If it's not, it
+is the next pixel.
+<br>
+b) do same for pixel straight ahead. Go there if it's not part
+of the wall.
+<br>
+c) ditto for pixel to the right. If this pixel is also part of
+the wall, go back one pixel.
+<br>
+   
+<br>
+When we're back at the starting point we trace the boundary once
+more. Now, whenever we move up, we plot pixels to the right of
+the current one until we hit the wall.
+<p>
+This method was inspired by a post on 
+<tt>sci.fractals</tt> by Maarten Egmond (cp@stack.urc.tue.nl).
+<br>
+The complexity of the 
+<b>Boundary Tracing</b> algorithm is in O(n²). The code is in 
+<tt>boundary.c</tt>.
+<h3>SOI</h3>
+
+<p>
+SOI stands for 
+<b>Simultaneous Orbit Iteration.</b> It was "invented" by Steven Stoft and introduced in his program
+<b>Fractal Witchcraft</b> (<a href="http://spanky.triumf.ca/pub/fractals/programs/IBMPC/FW1-08.ZIP">http://spanky.triumf.ca/pub/fractals/programs/IBMPC/FW1-08.ZIP</a>). Most of the information I had about the method before starting
+out came from a response to my inquiry about 
+<b>Fractal Witchcraft</b>'s speed from Robert P. Munafo (mrob@world.std.com) on 
+<tt>sci.fractals</tt>.
+<br>
+As you may recall from section 
+<a href="#The_Mandelbrot_Set">The Mandelbrot Set</a>, calculating 
+<i>M</i> involves an iterative process, which means on successive iterations
+one point is mapped onto another one. Now, if we look at not only
+one point but a whole set of points, say a rectangle, these points
+get mapped onto a different set of points in the complex plane.
+If this (iterated) set of points is still a rectangle, we can
+make the reasonable assumption that in order to obtain the iterated
+value for a point inside the original rectangle all we have to
+do is a linear interpolation, i.e. determine where the point in
+the original rectangle would be in the new, iterated rectangle
+if we had merely "resized" it and moved it to the new location
+(which in effect is what we have done by iterating). To put it
+in other words, if point x is in the middle of the rectangle before
+iterating it will be in the middle of the iterated rectangle also.
+
+<br>
+The problem is that for a given rectangle the iterated point set
+is very rarely a perfect rectangle. The approach used by 
+<em>AlmondBread</em> involves a polynomial interpolation of 2nd degree (using 
+<b>Newton interpolation</b>). For every rectangle we have 9 key points plus four test points.
+All points are iterated and the test points are interpolated.
+If the ratio of iterated to interpolated test points is greater
+than an allowed margin, we subdivide, proceeding in a fashion
+similar to the 
+<b>Tesseral</b> algorithm (using a 4-way split, though). Otherwise, we do the
+iterating and interpolating over until we have to split or 
+<b>maxiter</b> is reached, in which case we simply fill the rectangle and
+exit. This may sound trivial at first, but the whole interpolating
+stuff can get pretty confusing after a while, particularly when
+you have to interpolate certain points and don't know which key
+points to use (just take a  look at the subdividing part in
+the code), but this is mainly due to my quick'n'dirty implementation
+tactics.
+<br>
+<b>SOI</b> does a very good job on images that have a high number of average
+iterations, typically very deep zooms that take a long time using
+other algorithms such as 
+<b>Interleave</b>. It does not do as good a job on low-magnification images, because
+unlike 
+<b>Interleave</b>, for example, 
+<b>SOI</b> has a large organizational overhead.<b> </b>
+There are a few tricks, however, which can make 
+<b>SOI</b> as fast or even faster on low-magnificaction images. The main
+problem with low-magnification images is that the number of simultaneous
+iterations is very small and you have to subdivide after very
+few iterations. Therefore, 
+<em>AlmondBread</em> has a 
+<b>minprogress</b> variable, which controls the minimum number of iterations required
+to allow subdividing. If this number is not reached, 
+<b>Interleave</b> scanning is employed.<b>
+<br>
+</b>A word of warning is necessary at this point. The 
+<b>SOI</b> in 
+<em>AlmondBread</em> is far from perfect. With certain images you may notice severe
+distortions caused by a failure of the tolerance code. You can
+then lower the value of the variable 
+<b>tolerance</b> (possibly from 0.1 to 0.05). Of course, this is not acceptable,
+but up till now, I have not found a fool-proof way of detecting
+distortion (I would greatly appreciate any input you might have
+on this or any other aspect of 
+<b>SOI</b>. Plus, let me know if you have implemented 
+<b>SOI</b> or a similar method yourself).
+<br>
+The complexity of 
+<b>SOI</b> cannot be easily compared to previous methods, since it does
+not depend on the side length of the image.
+<br>
+The code for 
+<b>SOI</b> can be found in 
+<tt>soi.c</tt>.<tt>
+<br>
+</tt>
+<h2><a name="Iteration_Methods">Iteration Methods</a></h2>
+
+<p>
+Selecting an iteration method is done either by selecting a radiobutton
+or setting the variable 
+<b>iterate</b>, which accepts values from 0 (<b>Conventional</b>) to 2 (<b>Unroll</b>).<b> </b>
+Selecting the 
+<b>Options</b> menu entry will pop up a window containing entries for 
+<b>bailout</b> and 
+<b>maxiter</b>.
+<h3>Conventional</h3>
+
+<p>
+As you might have guessed, this is the most basic algorithm to
+perform the iteration of a single point. It has no optimizations
+(except for obvious ones). It is a straightforward implementation
+of the method discussed in 
+<a href="#The_Mandelbrot_Set">The Mandelbrot Set</a>. You can find the code in 
+<tt>conventional.h</tt>.
+<h3>Optimized</h3>
+
+<p>
+This routine has two major optimizations, both of which concern
+themselves with the iteration of points inside 
+<i>M</i>:
+<p>
+1. Periodicity checking
+<br>
+Recall from section 
+<a href="#The_Mandelbrot_Se">The Mandelbrot Se</a>t that a point is in 
+<i>M</i> if during iteration its magnitude does not exceed 
+<b>bailout</b>. We know that this is the case for a certain point z(0):=c if
+we discover that z(i+p)=z(i), i.e. the iteration has entered a
+cycle. This sounds easy enough, but implementing it proves rather
+cumbersome since we do not know in advance what p is and saving
+every z(i) and testing it against all its predecessors would take
+too long. Therefore 
+<em>AlmondBread</em> saves only every "<b>maxiter</b>/8"th z, exiting if |z-"saved z"|&lt;pixelsize. This is nowhere
+near optimal, but suffices to catch a lot of "offenders". If
+you have a better method, please let me know.
+<p>
+2. Cardioid checking
+<br>
+If you take a look a the Mandelbrot set, you will notice that
+most of it is made up of a number of discs that are attached to
+an object that looks like a sliced apple, which is called a cardioid
+(presumably because it looks a little like a heart, too). With
+a couple of operations we can check whether a given point lies
+inside one of those objects and exit if it does (at least for
+the main cardioid, and the 3 biggest discs attached to it). For
+example, if z=(r,i) satisfies (1/4)² &lt;= (r+1)²+i², it lies
+inside the disc at (-1,0) with radius 1/4.
+<br>
+Most of the cardioid checking code in 
+<em>AlmondBread</em> was taken from a post by Todd S. Lehman (toddl@county.lmt.mn.org)
+on 
+<tt>sci.fractals</tt>. Also, check out 
+<i>The Beauty of Fractals</i> (p.56).
+<p>
+The code can be found in 
+<tt>optimized.h</tt>.
+<h3>Unroll</h3>
+
+<p>
+Besides the optimizations mentioned in the previous paragraph,
+this method includes a technique that is geared toward reducing
+the number of instructions used to perform one iteration. The
+"normal" iteration loop looks something like this:
+<p>
+<tt>do
+<br>
+    {   
+<br>
+      im=(im+im)*re+cim;
+<br>
+      re=rq-iq+cre;
+<br>
+      rq=re*re;
+<br>
+      iq=im*im;
+<br>
+      /* maybe some periodicity checking here */
+<br>
+    }
+<br>
+while (i++&lt;=maxiter &amp;&amp; rq+iq&lt;bailout);
+<br>
+</tt>
+<br>
+As you can see, this process involves 3 floating point multiplies.
+We would be able to eliminate one of them if we didn't have to
+check for 
+<b>bailout</b> on each iteration. And that's exactly what we do: We unroll
+the loop and check for the bound only every n-th time.
+<p>
+<tt>do
+<br>
+    {
+<br>
+      /* do this n times */
+<br>
+      i1 = (im+im)*re+cim;
+<br>
+      r1 = (re+im)*(re-im)+cre;
+<br>
+      
+<br>
+      /* now check the bound once */
+<br>
+      rq = rn*rn;
+<br>
+      iq = in*in;
+<br>
+      if(rq+iq&gt;bailout)
+<br>
+      {
+<br>
+       /* determine correct iter and return */       
+<br>
+      }
+<br>
+      i+=n;
+<br>
+    }
+<br>
+while (i&lt;maxiter);
+<p>
+</tt>In addition to saving one multiplication (which in fact isn´t
+such a big savings on modern processors such as the Pentium) the
+comparison and looping overhead can be avoided. This turns out
+to be an even greater advantage, especially for Intel processors
+where floating point comparisons are very costly.
+<br>
+There are a couple of problems, though. First of all, we are running
+the risk of doing too many iterations if we don't check the bound
+each time, but if 
+<b>maxiter</b> is large compared to the number of unrolled iterations the
+time-savings outweigh the overhead. Secondly, the magnitude of
+z can get very large after it surpasses bailout, generating a
+floating-point exception. Therefore, 
+<em>AlmondBread</em> unrolls only to a depth of eight, which seems to be safe for
+IEEE 754 doubles. Thirdly, it has to be determined when exactly
+the 
+<b>bailout</b> value was exceeded in order to color the corresponding pixel
+correctly. Nick Haines (nickh@cmu.edu) suggested doing an "exponent
+correction hack", which uses the exponent of the magnitude of
+z to determine the correct iteration number. It is based on the
+observation that after |z| surpasses 
+<b>bailout</b>, its exponent is doubled on each consecutive iteration. However,
+this works only for 
+<b>bailout</b> values larger than 4.
+<br>
+The code is in 
+<tt>unroll.h</tt>.
+<h2><a name="Coloring_Schemes">Coloring Schemes</a></h2>
+<tt>
+<p>
+</tt>Selecting a coloring scheme is done either by selecting a radiobutton
+in the 
+<b>Coloring</b> menu or setting the variable 
+<b>scheme</b> to a value in the range of 0-2, where 0 corresponds to 
+<b>Normal</b> and 2 represents 
+<b>Decomposition</b>.<b> </b>
+Selecting the 
+<b>Options</b> menu entry will pop up a window containing entries that control
+variables pertaining to the currently selected color scheme.
+<h3>Normal</h3>
+
+<p>
+This coloring scheme will color a pixel according to the level
+of iteration where the magnitude of z got bigger than 
+<b>bailout</b> (therefore sometimes termed 
+<b>Level Set Method</b>).
+<h3>Potential</h3>
+
+<p>
+This method yields smoother contours of the color bands than 
+<b>Normal</b> at the cost of slower computation. The equipotential lines
+computed by this method are lines of equal escape time towards
+infinity (as are the bands computed by 
+<b>Normal</b>, albeit on a much cruder basis). Consult 
+<i>The Beauty of Fractals</i> and 
+<i>The Science of Fractal Images</i> for mathematical details.
+<br>
+The potential is computed as 
+<br>
+	<tt>pot := maxcolor - slope * log( |z(n)| ) / 2^n</tt>
+<br>
+<b>maxcolor</b> is the maximum value for pot, values &lt;0 will be "truncated"
+to 1.
+<br>
+<b>slope</b> affects the width of the color bands.
+<br>
+z(n) is the value of z at the end of iteration, i.e. the value
+it holds when 
+<b>bailout</b> is reached, after n iterations.
+<br>
+The names of the variables are the same as in 
+<b>Fractint</b>.
+<h3>Decomposition</h3>
+
+<p>
+This method determines the color for pixel p on the basis of the
+angle of z(n) in polar coordinates, where z(n) is the value of
+z at the end of iteration. The normal representation of complex
+numbers is as a pair of real numbers (r,i) where r describes the
+real part and i the imaginary one. You can also describe a complex
+number completely by its radius (magnitude) and angle on a plane
+with real and imaginary axes. The 
+<b>arity</b> parameter determines how many segments the circle of possible
+angle values is divided into, i.e. if 
+<b>arity</b> is 2 p will be colored according to whether the imaginary part
+of z(n) is positive or negative. Again, try 
+<i>The Science of Fractal Images</i> or 
+<i>The Beauty of Fractals</i> for an in-depth explanation. 
+<b>arity</b> 256 and a nicely shaded colormap gives beautiful pictures.
+<br>
+<b></b>
+<h2><a name="The_Zoombox">The Zoombox</a></h2>
+<b>
+<p>
+</b>Instead of using the interface entries to set the image coordinates
+you can also use the zoombox. To bring bring up the zoombox at
+any time just press button #2 in the image window. Dragging the
+mouse with button #1 pressed will resize the zoombox while moving
+the mouse with all buttons up will move the zoombox around. Double-clicking
+mouse button #1 or typing 
+<b>&lt;Return&gt;</b> will perform a zoom-in whereas double-clicking button #3 or
+typing 
+<b>&lt;Control-Return&gt;</b> will do a zoom-out. Zooming out means that the old image will
+be located at the position of the zoombox in the new image. A
+zoom will automatically trigger the 
+<b>GO</b> button after coordinate recalculation is complete. Pressing
+button #2 with the zoombox up will get rid of it.
+<h3>Resizing</h3>
+
+<p>
+A different way of manipulating coordinates is to resize the image
+interactively using the mouse. How this is done is up to your
+window manager, but it usually involves dragging out the corners
+of the window. This can be done with both the image window and
+the colormap window. The latter, however, is gridded, meaning
+you can change the size in either direction only in multiples
+of n (16 in this case, since the colormap has 256 entries). The
+bottom-left coordinates will not be affected by a resize, i.e.
+no matter which corner you drag out, it will always seem as if
+the top-right corner was dragged (in X terminology, this would
+be called south-west gravity, I think).
+<h3></h3>
+<h2><a name="Copyright">Copyright</a></h2>
+<h3></h3>
+Portions of the code contained in 
+<tt>appinit.c</tt> and most of 
+<tt>main.c</tt> is
+<br>
+Copyright © 1990-1994 The Regents of the University of California.
+<br>
+Copyright © 1994-1995 Sun Microsystems, Inc.
+<p>
+Most of 
+<tt>ppmtogif.c</tt> is
+<br>
+Copyright © 1989 Jef Poskanzer.
+<p>
+Most of 
+<tt>giftoppm.c</tt> is
+<br>
+Copyright © 1990 David Koblas.
+<p>
+<tt>general.c</tt> contains routines from 
+<tt>xfractint(1)</tt> and is therefore
+<br>
+Copyright © 1991 Ken Shirriff.
+<p>
+All code for 
+<em>AlmondBread</em>  not covered by the above copyright exceptions is
+<br>
+Copyright © 1994<em>-</em>1997 Michael R. Ganss. All Rights Reserved.
+<p>
+Consequently, it is subject to the following copyright conditions:
+<p>
+1. You may use, copy, modify, and distribute this software and
+its documentation for any non-commercial purpose free of charge.
+<br>
+2. The above copyright notice and this conditions notice must
+appear in all (modified or unmodified) copies and supporting documentation.
+<br>
+3. This software is provided "as is" without express or implied
+warranty.
+<br>
+4. You may use, copy, modify, and distribute this software and
+its documentation for a commercial purpose (i.e. for a profit)
+if a royalty in the amount of $5 per copy sold or 5% of the
+total sale price per copy sold (whichever is more) is paid to
+Michael Ganss (rms@cs.tu-berlin.de).
+<br>
+<tt>
+<p>
+</tt>
+</body>
+</html>

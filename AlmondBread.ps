@@ -1,0 +1,1176 @@
+%!% FONTS:
+/romanfont {/Times-Roman} def
+/italicfont {/Times-Italic} def
+/boldfont {/Times-Bold} def
+/bolditalicfont {/Times-BoldItalic} def
+/typewriterfont {/Courier} def
+/normalsize 12 def
+
+    /romansize normalsize def
+    /italicsize normalsize def
+    /boldsize normalsize def
+    /bolditalicsize normalsize def
+  /typewritersize 11 def
+/headingfont {/Helvetica} def
+
+    /heading0font headingfont def
+    /heading1font headingfont def
+    /heading2font headingfont def
+    /heading3font headingfont def
+    /heading4font headingfont def
+    /heading5font headingfont def
+  /linespacing 14 def
+%!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PostScript prologue for jstools (jtagconvert.tcl)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Most of following are set already by jtagconvert.tcl:
+%%/romanfont {/Times-Roman} def			/romansize 12 def
+%%/italicfont {/Times-Italic} def		/italicsize 12 def
+%%/boldfont {/Times-Bold} def			/boldsize 12 def
+%%/bolditalicfont {/Times-BoldItalic} def	/bolditalicsize 12 def
+%%/typewriterfont {/Courier} def		/typewritersize 11 def
+%%/heading0font {/Helvetica-BoldOblique} def
+%%/heading1font {/Helvetica-BoldOblique} def
+%%/heading2font {/Helvetica-BoldOblique} def
+%%/heading3font {/Helvetica-Oblique} def
+%%/heading4font {/Helvetica-BoldOblique} def
+%%/heading5font {/Helvetica-Oblique} def
+/heading0size 18 def
+/heading1size 14 def
+/heading2size 12 def
+/heading3size 12 def
+/heading4size 10 def
+/heading5size 10 def
+%%/linespacing 14 def		% space between successive baselines
+
+
+systemdict /ISOLatin1Encoding known {
+  % The reencodeISO procedure is from the a2ps prologue, 
+  %% Copyright (c) 1992, 1993, Miguel Santana, santana@imag.fr
+  %% a2ps 4.2
+  % Set up ISO Latin 1 character encoding
+  /reencodeISO {
+          dup dup findfont dup length dict begin
+          { 1 index /FID ne { def }{ pop pop } ifelse
+          } forall
+          /Encoding ISOLatin1Encoding def
+          currentdict end definefont
+  } def
+  [
+    romanfont
+    italicfont
+    boldfont
+    bolditalicfont
+    typewriterfont
+    heading0font
+    heading1font
+    heading2font
+    heading3font
+    heading4font
+    heading5font
+  ] {
+    reencodeISO def
+  } forall
+} if
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/inches {72 mul} def
+
+/TM 10.0 inches def	% top margin
+/BM 1.0 inches def	% bottom margin
+/LM 1.0 inches def	% left margin
+/RM 7.5 inches def	% right margin
+/RM1 {			% place to start looking for breaks
+  RM 0.5 inches sub
+} def
+/RM2 {			% place to force line break even if no space
+  RM 0.5 inches add
+} def
+
+/char 1 string def	% temporary space for current character
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/roman {romanfont findfont romansize scalefont setfont} def
+/italic {italicfont findfont italicsize scalefont setfont} def
+/bold {boldfont findfont boldsize scalefont setfont} def
+/bolditalic {bolditalicfont findfont bolditalicsize scalefont setfont} def
+/typewriter {typewriterfont findfont typewritersize scalefont setfont} def
+
+/heading0 {heading0font findfont heading0size scalefont setfont} def
+/heading1 {heading1font findfont heading1size scalefont setfont} def
+/heading2 {heading2font findfont heading2size scalefont setfont} def
+/heading3 {heading3font findfont heading3size scalefont setfont} def
+/heading4 {heading4font findfont heading4size scalefont setfont} def
+/heading5 {heading5font findfont heading5size scalefont setfont} def
+
+/topofpage {
+  LM TM moveto
+} def
+
+/realnewline {
+  currentpoint		% stack: x y
+  linespacing sub	% stack: x y'
+  exch pop		% stack: y'
+  LM			% stack: y' LM
+  exch			% stack: LM y'
+  moveto
+} def
+
+/newline {
+  realnewline
+  currentpoint		% stack: x y
+  BM lt {
+    showpage
+    topofpage
+  } if
+  pop
+} def
+
+/space {
+  currentpoint pop	% stack: x
+  RM1 gt {
+    newline
+  } {
+    ( ) show
+  } ifelse
+} def
+
+/showchar {		% stack: single_character
+  currentpoint pop	% stack: x
+  RM2 gt {		% force a newline if we're too close to the edge
+    newline
+  } if
+  
+  dup 32 eq {		% space?
+    pop
+    space
+  } {
+    dup 10 eq {		% newline?
+      pop
+      newline
+    } {
+      char exch		% stack: /char <char>
+      0 exch		% stack: /char 0 <char>
+      put
+      
+      char show
+    } ifelse
+  } ifelse
+} def
+
+/breakshow {		% stack: string_to_display
+  {
+    showchar
+  } forall
+} def
+
+/indent {
+  /LM LM 0.5 inches add def
+  currentpoint exch pop LM exch moveto
+} def
+
+/unindent {
+  /LM LM 0.5 inches sub def
+  currentpoint exch pop LM exch moveto
+} def
+
+/item {
+  gsave
+  /Symbol findfont romansize scalefont setfont
+  currentpoint exch	% stack: y x
+  (· ) stringwidth pop sub
+  exch moveto
+  (· ) show
+  grestore
+  % move back a bit to allow for the space that probably follows
+  currentpoint exch
+  ( ) stringwidth pop sub
+  exch moveto
+} def
+
+/hrule {
+  gsave
+  0.25 setlinewidth
+  currentpoint exch pop	% stack: y
+  linespacing 3 div add
+  dup LM exch		% stack: y LM y
+  moveto
+  RM2 exch		% stack: RM2 y
+  lineto
+  stroke
+  grestore
+  newline
+} def
+
+topofpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% end prologue
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+heading0 (AlmondBread 0.22) breakshow
+roman (
+
+) breakshow
+heading1 (Introduction) breakshow
+roman (
+
+) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( is yet another program which calculates and displays images of the Mandelbrot set.) breakshow
+bold (
+) breakshow
+roman (It is certainly not as versatile as e.g. ) breakshow
+bold (Fractint) breakshow
+roman (, but I think it can be fun to play with nonetheless, particularly because of its nice interface \(courtesy of ) breakshow
+bold (Tcl/Tk) breakshow
+roman (\), fast algorithms and flexible colormap handling. Here are some more of ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ('s features:
+
+- Fast algorithms, among them an implementation of ) breakshow
+bold (Simultaneous Orbit Iteration) breakshow
+roman (
+) breakshow
+bold (   ) breakshow
+roman (\(see ) breakshow
+roman (Drawing Methods) breakshow
+roman (\).
+- Save/Load ) breakshow
+bold (Fractint) breakshow
+roman (-compatible GIF files \(see ) breakshow
+roman (The File Menu) breakshow
+roman (\).
+- Load ) breakshow
+bold (Fractint) breakshow
+roman (-style colormap files \() breakshow
+typewriter (.MAP) breakshow
+roman ( files\).
+- Shared or own colormap using an allocation scheme similar to that of ) breakshow
+typewriter (xv\(1\)) breakshow
+roman (
+  ) breakshow
+bold ( ) breakshow
+roman (\(see ) breakshow
+roman (The Colormap Menu) breakshow
+roman (\).
+- Easy-to-use zoombox function \(see ) breakshow
+roman (The Zoombox) breakshow
+roman (\).
+
+) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( was written by Michael Ganss, rms@cs.tu-berlin.de.
+Please contact me if you discover any bugs, have fixes for them or any other ideas that might aid in the improvement of this software, including favorable comments as well.
+For copyright information see ) breakshow
+roman (Copyright) breakshow
+roman (.
+
+) breakshow
+heading1 (Invocation) breakshow
+bolditalic (
+
+) breakshow
+roman (        ) breakshow
+bold (almond) breakshow
+roman ( [fileName] [-colormap new] [-display ) breakshow
+italic (display) breakshow
+roman (]
+        [-geometry ) breakshow
+italic (geometry) breakshow
+roman (] [-name ) breakshow
+italic (name) breakshow
+roman (] [-sync] [-visual ) breakshow
+italic (visual) breakshow
+roman (] 
+        [-help]) breakshow
+typewriter ( ) breakshow
+roman ([--]
+
+The options are as follows:
+
+) breakshow
+bold (fileName) breakshow
+roman (
+) breakshow
+bold (        ) breakshow
+roman (Read commands from ) breakshow
+bold (fileName) breakshow
+roman ( rather than standard input.) breakshow
+bold (
+) breakshow
+roman (
+) breakshow
+bold (-colormap new) breakshow
+roman (
+        Specifies) breakshow
+bold ( ) breakshow
+roman (that the interface window should have) breakshow
+bold ( ) breakshow
+roman (a new private colormap
+        instead of using) breakshow
+bold ( ) breakshow
+roman (the default colormap for the) breakshow
+bold ( ) breakshow
+roman (screen.) breakshow
+bold (
+) breakshow
+roman (
+) breakshow
+bold (-display) breakshow
+roman ( ) breakshow
+italic (display) breakshow
+roman (
+        Display \(and screen\) to use.
+        
+) breakshow
+bold (-geometry) breakshow
+roman ( ) breakshow
+italic (geometry) breakshow
+roman (
+        Initial geometry to use for the interface window. If this option is specified, its 
+        value is stored in the ) breakshow
+bold (geometry) breakshow
+roman ( global variable of ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ('s Tcl
+        interpreter.
+
+) breakshow
+bold (-name) breakshow
+roman ( ) breakshow
+italic (name) breakshow
+roman (  
+        Use ) breakshow
+italic (name) breakshow
+roman ( as the title to be displayed in the interface) breakshow
+bold ( ) breakshow
+roman (window, and as the 
+        name of the interpreter for ) breakshow
+bold (send) breakshow
+roman ( commands.
+
+) breakshow
+bold (-sync) breakshow
+roman (      
+        Execute all X server commands synchronously, so that errors are reported 
+        immediately. This will result in much slower execution, but it is useful for 
+        debugging.
+
+) breakshow
+bold (-visual) breakshow
+roman ( ) breakshow
+italic (visual) breakshow
+bold (
+) breakshow
+roman (        Specifies the visual to use for the interface window. ) breakshow
+italic (Visual) breakshow
+roman ( may have any of
+        the forms supported by the ) breakshow
+typewriter (Tk_GetVisual) breakshow
+roman ( procedure.
+        
+-) breakshow
+bold (help) breakshow
+roman (      
+        Print a summary of the command-line options and exit.
+) breakshow
+italic (
+) breakshow
+bold (--
+        ) breakshow
+roman (Pass all remaining arguments through to the script's ) breakshow
+bold (argv) breakshow
+roman ( variable without
+        interpreting them. This provides a mechanism for passing arguments such
+        as ) breakshow
+bold (-name) breakshow
+roman ( to a script instead of having ) breakshow
+bolditalic (AlmondBread ) breakshow
+roman (interpret them.
+
+You can abbreviate all options, e.g. ) breakshow
+bold (-n) breakshow
+roman ( is as good as ) breakshow
+bold (-name) breakshow
+roman (.
+
+Once you have succesfully started the program in interactive mode, i.e. without the initial ) breakshow
+bold (fileName) breakshow
+roman ( option and not from within a script, you are in a Tcl shell which you can type regular Tcl commands to. There are a number of Tcl variables that you can manipulate in order to influence ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ('s behavior. I'll try to mention their names at the appropriate places.
+
+If you start ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( in interactive mode, the file ) breakshow
+typewriter (~/.almondrc) breakshow
+roman ( will be sourced at the beginning \(if it exists\). The variable ) breakshow
+bold (abdir) breakshow
+roman ( holds a directory name, which decides where ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( looks to find its startup ) breakshow
+typewriter (.tcl) breakshow
+roman ( files. Its default value is ) breakshow
+typewriter (~/.tk) breakshow
+roman (.
+
+In order for ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( to work at all, you need to make sure that you have the ) breakshow
+bold (jstools) breakshow
+roman (-package installed on your system \(either in the default Tk library directory or in ) breakshow
+typewriter (~/.tk) breakshow
+roman (\). But since you are probably reading this via) breakshow
+bold ( jdoc) breakshow
+roman (, there's not much point in telling you this now. More information about ) breakshow
+bold (jstools) breakshow
+roman ( is available at ) breakshow
+roman (http://www.cs.uoregon.edu/docs/jstools/jstools.html) breakshow
+roman (.
+
+) breakshow
+heading1 (The Mandelbrot Set) breakshow
+roman (
+
+This section describes some of the basic mathematical concepts behind the Mandelbrot set and its generation.
+
+The Mandelbrot set - or ) breakshow
+italic (M) breakshow
+roman ( - was discovered in 1980 by mathematician Benoit B. Mandelbrot. It is considered to be the most complex object mathematics has ever seen ) breakshow
+roman ([1]) breakshow
+roman (.
+
+In ) breakshow
+roman ([2]) breakshow
+roman ( ) breakshow
+italic (M) breakshow
+roman ( is defined as follows:
+"The Mandelbrot set is the set of all complex numbers c such that iterating z -> z² +c does not go to infinity \(starting with z=0\)". 
+It can be shown that the sequence diverges if the magnitude of z exceeds 2.
+
+) breakshow
+heading2 (The Algorithm) breakshow
+roman (
+
+The basic algorithm to generate an image of ) breakshow
+italic (M) breakshow
+roman ( and its basin of attraction for a given region R in the complex plane goes like this:
+For each pixel p representing a point c in R do the following:
+
+1. z := 0, n := 0.
+2. z := z²+c.
+3. n := n+1.
+4. If |z|<2 and n<N go to 2.
+
+N is the maximum number of iterations you allow \(smaller values mean faster execution, larger ones better accuracy\). It can be set by either modifying the variable ) breakshow
+bold (maxiter) breakshow
+roman (, or using the interface entry in the ) breakshow
+bold (Options) breakshow
+roman ( submenu of the ) breakshow
+roman (Iteration Methods) breakshow
+roman ( menu.
+If the iteration loop terminates because n>=N, there is a good chance c lies in ) breakshow
+italic (M) breakshow
+roman (, so you can color p accordingly. In ) breakshow
+bolditalic (AlmondBread) breakshow
+roman (, the variable) breakshow
+bold ( inside) breakshow
+roman (, accessible through the ) breakshow
+bold (Options) breakshow
+roman ( submenu of the ) breakshow
+roman (Coloring Schemes) breakshow
+roman ( menu, controls how pixels in ) breakshow
+italic (M) breakshow
+roman ( are colored. The value is an index into the colormap and thus ranges from 0-255.
+If, however, |z|>=2 then p lies outside of ) breakshow
+italic (M) breakshow
+roman ( and you can color p according to the number of iterations when z "bailed out", i.e. according to n. In ) breakshow
+bolditalic (AlmondBread) breakshow
+roman (, pixels outside of ) breakshow
+italic (M) breakshow
+roman ( are colored "n mod colors", where ) breakshow
+bold (colors) breakshow
+roman ( is a Tcl variable that is initially set to the number of colors available on the X screen, but can be modified to limit the actually used colors to a smaller range \(not something you would normally want to do\). It is also set if an image is loaded that uses a smaller number of colors \(e.g. a ) breakshow
+bold (Fractint) breakshow
+roman ( image that was created in a VGA mode such as 640x480x16\).
+The region R can be defined through the interface by using the entries ) breakshow
+bold (left) breakshow
+roman (, ) breakshow
+bold (right) breakshow
+roman (, and ) breakshow
+bold (bottom) breakshow
+roman (. The top is set automatically to ensure that each pixel covers a square area in the complex plane, i.e. there is no distortion. You can, however, force a different value by setting the variables ) breakshow
+bold (minr) breakshow
+roman (, ) breakshow
+bold (maxr) breakshow
+roman ( \(the minimum and maximum value on the real axis\) and ) breakshow
+bold (mini) breakshow
+roman (, ) breakshow
+bold (maxi) breakshow
+roman ( \(ditto for the imaginary axis\). ) breakshow
+bold (minr) breakshow
+roman (, ) breakshow
+bold (maxr) breakshow
+roman ( correspond directly to left, right, whereas ) breakshow
+bold (mini) breakshow
+roman (, ) breakshow
+bold (maxi) breakshow
+roman ( are defined as \(-) breakshow
+bold (top) breakshow
+roman (\), \(-) breakshow
+bold (bottom) breakshow
+roman (\) respectively. This is due to implementational reasons \(pixel values always start from the top left, whereas the cartesian plane starts on the bottom left\).
+Although it is safe to assume that a point whose magnitude is larger than 2 lies outside ) breakshow
+italic (M) breakshow
+roman (, you can adjust the bailout value through the variable ) breakshow
+bold (bailout) breakshow
+roman ( or its corresponding entry) breakshow
+bold ( ) breakshow
+roman (in the ) breakshow
+bold (Options) breakshow
+roman ( submenu of the ) breakshow
+roman (Iteration Methods) breakshow
+roman ( menu. Higher values will yield smoother boundaries.
+Generating an image in ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( is a three-layered process. First, one of the ) breakshow
+roman (Drawing Methods) breakshow
+roman ( determines how a set of pixels is computed. The ) breakshow
+roman (Iteration Methods) breakshow
+roman ( define the way an individual iteration is carried out. Thus, they pertain only to the generation of a single pixel \(as you will see, ) breakshow
+bold (SOI) breakshow
+roman ( makes an exception from this rule\). Finally, the ) breakshow
+roman (Coloring Schemes) breakshow
+roman ( determine how a single pixel is colored once iteration for it is complete.
+
+) breakshow
+heading2 (References) breakshow
+roman (
+
+[1]        Peitgen, H.-O., Saupe, D., et al.
+        ) breakshow
+italic (The Science of Fractal Images) breakshow
+roman (
+        Springer Verlag, Berlin, 1988
+        
+[2]        Shirriff, K.
+        ) breakshow
+italic (The sci.fractals FAQ) breakshow
+roman (
+        Posted monthly on ) breakshow
+typewriter (sci.fractals) breakshow
+roman (, ) breakshow
+typewriter (news.answers) breakshow
+roman (
+        ) breakshow
+roman (http://spanky.triumf.ca/pub/fractals/docs/SCI_FRACTALS.FAQ) breakshow
+roman (
+
+For more on the subject, I can also recommend:
+
+        Peitgen, H.-O., Richter, P.H.
+        ) breakshow
+italic (The Beauty of Fractals) breakshow
+roman (
+        Springer Verlag, Berlin, 1986) breakshow
+italic (
+) breakshow
+roman (
+        Giffin, Noel
+        The Spanky Fractal Database
+        contains all the information you'll ever need about fractals
+        ) breakshow
+roman (http://spanky.triumf.ca/) breakshow
+roman (.
+
+) breakshow
+heading1 (The File Menu) breakshow
+italic (
+
+) breakshow
+roman (Besides using the mouse the File Menu can be invoked by pressing Alt-f \(the Alt key may have a different name on your keyboard, but it is synonymous with the mod2 key modifier; consult ) breakshow
+typewriter (xmodmap\(1\)) breakshow
+roman ( if you are unsure\) or F10.
+
+) breakshow
+heading2 (Loading a file) breakshow
+roman (
+
+If you invoke the menu entry ) breakshow
+bold (Load) breakshow
+roman (, you will be prompted for a file name. I assume you know how a file browser works. One feature worth mentioning, though, is ) breakshow
+bold (Emacs) breakshow
+roman (-style name completion \(or at least a subset thereof\) with the Tab-key.
+You can load any ) breakshow
+bold (GIF) breakshow
+roman ( file. If it has a ) breakshow
+bold (Fractint) breakshow
+roman ( application extension \(meaning a file that was saved by a program of the ) breakshow
+bold (Fractint) breakshow
+roman ( family\), it is recognized as well and all parameters that are supported by ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( are set automatically \(like ) breakshow
+bold (maxiter) breakshow
+roman (, ) breakshow
+bold (inside) breakshow
+roman ( etc.\). If the fractal type is anything other than mandel or mandelfp, the file will be treated like an ordinary ) breakshow
+bold (GIF) breakshow
+roman (, i.e. the extension will be disregarded. In this case, all picture information will be lost once you hit the ) breakshow
+bold (GO) breakshow
+roman ( button, and the same image as before the load will be generated \(albeit with a different resolution and/or colormap\).
+
+) breakshow
+heading2 (Saving a file) breakshow
+roman (
+
+This works analogous to the ) breakshow
+bold (Load) breakshow
+roman ( operation. The file saved will be in GIF89 format with a ) breakshow
+bold (Fractint) breakshow
+roman ( application extension. The data structure used by ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( corresponds to the one used in ) breakshow
+bold (Fractint) breakshow
+roman ( version 18.2, although you should be able to read the file with any version later than 14. All parameters that are not supported by ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( are set to default values.
+
+) breakshow
+heading2 (Quit) breakshow
+roman (
+
+Invoking this menu option will close all windows and terminate ) breakshow
+bolditalic (AlmondBread) breakshow
+roman (.
+) breakshow
+bolditalic (
+) breakshow
+heading1 (The Colormap Menu) breakshow
+bolditalic (
+
+) breakshow
+heading2 (Own Colormap) breakshow
+roman (
+
+If this checkbutton is switched "on", ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( will install its own colormap for displaying the generated image. On an 8-Bit Display, this means ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( will have 256 colormap entries at its disposal, no matter how many other programs occupy resources in the shared colormap. Therefore, the subsequent color allocation will typically succeed in getting all the colors it wants \(color allocation is necessary, because even though we have a new, empty colormap it is possible this colormap has less than 256 entries, e.g. on a 6-Bit display\). On the other hand, you will notice that once a window other than ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( has the focus its colormap \(usually the shared colormap\) is installed, thus f-ing up ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ('s colors \(of course this goes the other way round, too\).
+The command that is attached to the checkbutton does nothing more than configure the raster widget in the image window like this: ) breakshow
+typewriter (.r conf -owncmap yes) breakshow
+roman ( \(metaphorically speaking... Of course there is some extra code for status output etc.\). The real work is done by the widget routines.
+If the checkbutton gets switched "off" \(this is the default\), ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( will allocate its colors from the shared colormap, which is used by many other X clients as well \(e.g. your window manager\) and therefore oftentimes does not provide enough "free" entries to suit the needs of ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ('s colormap. Hence a method needs to be employed to use the resource "colors" in an efficient manner, making generated images resemble their imaginary counterparts with an own colormap as closely as possible. ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( uses an algorithm similar to that in John Bradley's ) breakshow
+bold (xv) breakshow
+roman ( program ) breakshow
+roman ([1]) breakshow
+roman (. First, it arranges the 256 original colors in order of importance using the ) breakshow
+bold (diversity algorithm) breakshow
+roman (. Then, it tries to allocate those colors. In the next phase, for each color that went unallocated the algorithm tries to allocate the color that is closest in the X colormap. Finally, all colors that are still unallocated by now are mapped into those that were successfully allocated in previous phases.
+The status line at the bottom of ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ('s interface will tell you how many colors were allocated in which phase.
+
+) breakshow
+heading2 (Show Colormap) breakshow
+roman (
+
+If you switch this checkbutton "on", a window showing the current colormap used by ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( will pop up. It contains a raster widget whose ) breakshow
+typewriter (owncmap) breakshow
+roman ( option is coupled to that of the main raster widget, so you will see the correct colormap even if owncmap is in use. The colors are displayed in order from top left \(0\) to bottom right \(255\). You can remove the window by either unselecting the checkbutton or clicking on button #) breakshow
+typewriter (3) breakshow
+roman ( in the window.
+
+) breakshow
+heading2 (Loading a Colormap) breakshow
+roman (
+
+If you select this option, you will be prompted for the name of a colormap file. This file should be in the) breakshow
+bold ( Fractint) breakshow
+roman ( ) breakshow
+typewriter (.map) breakshow
+roman ( format, i.e. a text file containing one color per line with RGB values ranging from 0-255 \(to put it another way, entries should be readable with ) breakshow
+typewriter (fscanf\(file, "%d %d %d", &r, &g, &b\)) breakshow
+roman (, so this is a valid line: "0 0 255 Blue"\).
+If a file has fewer than 255 entries, the missing ones are assumed to be all black.
+
+) breakshow
+heading2 (References) breakshow
+roman (
+
+[1]        Bradley, John \(bradley@cis.upenn.edu\)
+        ) breakshow
+italic (xv Manual) breakshow
+roman (
+        Appendices E and F) breakshow
+italic (
+        ) breakshow
+roman (ftp://ftp.cis.upenn.edu/pub/xv/) breakshow
+roman (
+) breakshow
+bold (
+) breakshow
+roman (
+) breakshow
+heading1 (Drawing Methods) breakshow
+roman (
+
+You can select any of the drawing methods described below by selecting the corresponding radiobutton in the user interface or by setting the variable ) breakshow
+bold (method) breakshow
+roman ( to one of the values 0-3.
+0 means ) breakshow
+bold (scan) breakshow
+roman ( and 3 will select ) breakshow
+bold (SOI) breakshow
+roman (.) breakshow
+bold ( ) breakshow
+roman (Selecting the ) breakshow
+bold (Options) breakshow
+roman ( entry will pop up a window containing entries that control variables for the currently selected drawing method.
+
+) breakshow
+heading2 (Scan) breakshow
+roman (
+
+This is the simplest method of generating an image of ) breakshow
+italic (M) breakshow
+roman (. As its name suggests, this algorithm simply scans the chosen region from top to bottom, doing a complete iteration for each pixel on the screen \(well, at least half the pixels, since for most coloring schemes the symmetrical properties of the generated image can be taken advantage of\). The complexity of the algorithm is in O\(n²\), where n is proportional to the side length of the image. For implementational details check out the file ) breakshow
+typewriter (scan.c) breakshow
+roman (.
+
+) breakshow
+heading2 (Interleave) breakshow
+roman (
+
+This algorithm is significantly faster than the ) breakshow
+bold (Scan) breakshow
+roman ( algorithm. However, it can be inaccurate to some extent. The idea is the following: For each i consecutive pixels, compute only one. If its color matches that of the previous computed pixel, assume all i are of same color and go on. If not, go back one pixel at a time until it matches the "saved" color \(plotting each of those different colored pixels along the way, of course\). Now, plot the whole line of unique color defined by the first point of "saved" color and the last. The parameter i can be controlled through the variable ) breakshow
+bold (interleave) breakshow
+roman ( or the ) breakshow
+bold (Options) breakshow
+roman ( submenu.
+Obviously, this is very fast for images containing large areas of a single color, but may err in images with fine filaments extending through areas of few colors. Thus, it follows the same policy as ) breakshow
+bold (Fractint) breakshow
+roman ('s ) breakshow
+bold (solid-guessing) breakshow
+roman ( logic. Its complexity is O\(c * n²\), with ) breakshow
+typewriter (1/i<=) breakshow
+roman (c<=1. For further details, check out ) breakshow
+typewriter (interleave.c) breakshow
+roman (.
+
+) breakshow
+heading2 (Tesseral) breakshow
+roman (
+
+This method is an imitation of ) breakshow
+bold (Fractint) breakshow
+roman ('s mode of same name. Although in most cases it is not as fast as ) breakshow
+bold (Interleave) breakshow
+roman (, it has a nice theoretical approach and is fun to look at. It makes use of the Mandelbrot set's connectedness property, which has as a consequence that there cannot be a region of one color inside a rectangle of another color, i.e. once you find that the sides of a rectangular region are of a single color, it is safe to assume the whole rectangle to be of said color \(with some margin of error, of course, since strictly speaking one pixel defines a region, not just one point\). The procedure used to generate the image is this:
+
+1. Compute the border of the region, keeping track of the number of colors used.
+2. If only one color was used, we assume the whole region to be of that color and "blit" it in.
+3. If more than one color was used, we subdivide the image into 2 smaller ones and calculate them recursively \(stopping at a certain minimum side length, beyond which we use scanning to finish up the image. This minimum side length can be modified through the variable ) breakshow
+bold (goscanat) breakshow
+roman ( or the ) breakshow
+bold (Options) breakshow
+roman ( menu\).
+
+There are some details I think are worth elaborating on. First, ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ('s algorithm subdivides at least once to avoid "blitting" in the initial image. Secondly, it skips computing those edges of the image that were already done in the previous stage \(which is either 3 or all 4 using the "DIN" approach\). Thirdly, ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( uses the "DIN" approach to subdividing the image \(I call it that because of the way paper sizes in the DIN system are related, e.g. DIN A5 is half the size of DIN A4\). This means simply that subdividing in horizontal or vertical direction is done in alternating fashion, which has proven to be very efficient over other methods like 4-way splitting.
+The complexity of the ) breakshow
+bold (Tesseral) breakshow
+roman ( algorithm is in O\(n * log\(n\)\). The code is located in ) breakshow
+typewriter (tesseral.c) breakshow
+roman (.
+
+) breakshow
+heading2 (Boundary Tracing) breakshow
+roman (
+
+The ) breakshow
+bold (Boundary Tracing) breakshow
+roman ( method takes the idea that led to the ) breakshow
+bold (Tesseral) breakshow
+roman ( algorithm one step further. The fact that the Mandelbrot set is connected, implies that there won't be areas of one color "inside" areas of a different color. This means, that if you trace the boundary of a region of a single color, i.e. determine the connected set of pixels of one color whose members have at least one neighboring pixel of a different color, all the pixels inside that area will have that one color also. Color in this context refers to the iteration value of a single pixel. The algorithm is this:
+We scan the whole screen pixel by pixel, keeping an offscreen map of iteration values for each pixel \(initially set to all -1s to signal "not done"\). If we hit a pixel not done, we start tracing its border going right and keeping the "wall" to our left until we get back to the starting point. For each pixel, the next pixel visited will be computed thus:
+
+a\) check pixel to left \(looking in the current direction, i.e. if the current direction is right, the pixel to the left is the one above it\). If it's part of the wall \(i.e. offscreen or a different color than the one we're tracking\), go to b\). If it's not, it is the next pixel.
+b\) do same for pixel straight ahead. Go there if it's not part of the wall.
+c\) ditto for pixel to the right. If this pixel is also part of the wall, go back one pixel.
+   
+When we're back at the starting point we trace the boundary once more. Now, whenever we move up, we plot pixels to the right of the current one until we hit the wall.
+
+This method was inspired by a post on ) breakshow
+typewriter (sci.fractals) breakshow
+roman ( by Maarten Egmond \(cp@stack.urc.tue.nl\).
+The complexity of the ) breakshow
+bold (Boundary Tracing) breakshow
+roman ( algorithm is in O\(n²\). The code is in ) breakshow
+typewriter (boundary.c) breakshow
+roman (.
+
+) breakshow
+heading2 (SOI) breakshow
+roman (
+
+SOI stands for ) breakshow
+bold (Simultaneous Orbit Iteration.) breakshow
+roman ( It was "invented" by Steven Stoft and introduced in his program ) breakshow
+bold (Fractal Witchcraft) breakshow
+roman ( \() breakshow
+roman (http://spanky.triumf.ca/pub/fractals/programs/IBMPC/FW1-08.ZIP) breakshow
+roman (\). Most of the information I had about the method before starting out came from a response to my inquiry about ) breakshow
+bold (Fractal Witchcraft) breakshow
+roman ('s speed from Robert P. Munafo \(mrob@world.std.com\) on ) breakshow
+typewriter (sci.fractals) breakshow
+roman (.
+As you may recall from section ) breakshow
+roman (The Mandelbrot Set) breakshow
+roman (, calculating ) breakshow
+italic (M) breakshow
+roman ( involves an iterative process, which means on successive iterations one point is mapped onto another one. Now, if we look at not only one point but a whole set of points, say a rectangle, these points get mapped onto a different set of points in the complex plane. If this \(iterated\) set of points is still a rectangle, we can make the reasonable assumption that in order to obtain the iterated value for a point inside the original rectangle all we have to do is a linear interpolation, i.e. determine where the point in the original rectangle would be in the new, iterated rectangle if we had merely "resized" it and moved it to the new location \(which in effect is what we have done by iterating\). To put it in other words, if point x is in the middle of the rectangle before iterating it will be in the middle of the iterated rectangle also. 
+The problem is that for a given rectangle the iterated point set is very rarely a perfect rectangle. The approach used by ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( involves a polynomial interpolation of 2nd degree \(using ) breakshow
+bold (Newton interpolation) breakshow
+roman (\). For every rectangle we have 9 key points plus four test points. All points are iterated and the test points are interpolated. If the ratio of iterated to interpolated test points is greater than an allowed margin, we subdivide, proceeding in a fashion similar to the ) breakshow
+bold (Tesseral) breakshow
+roman ( algorithm \(using a 4-way split, though\). Otherwise, we do the iterating and interpolating over until we have to split or ) breakshow
+bold (maxiter) breakshow
+roman ( is reached, in which case we simply fill the rectangle and exit. This may sound trivial at first, but the whole interpolating stuff can get pretty confusing after a while, particularly when you have to interpolate certain points and don't know which key points to use \(just take a  look at the subdividing part in the code\), but this is mainly due to my quick'n'dirty implementation tactics.
+) breakshow
+bold (SOI) breakshow
+roman ( does a very good job on images that have a high number of average iterations, typically very deep zooms that take a long time using other algorithms such as ) breakshow
+bold (Interleave) breakshow
+roman (. It does not do as good a job on low-magnification images, because unlike ) breakshow
+bold (Interleave) breakshow
+roman (, for example, ) breakshow
+bold (SOI) breakshow
+roman ( has a large organizational overhead.) breakshow
+bold ( ) breakshow
+roman (There are a few tricks, however, which can make ) breakshow
+bold (SOI) breakshow
+roman ( as fast or even faster on low-magnificaction images. The main problem with low-magnification images is that the number of simultaneous iterations is very small and you have to subdivide after very few iterations. Therefore, ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( has a ) breakshow
+bold (minprogress) breakshow
+roman ( variable, which controls the minimum number of iterations required to allow subdividing. If this number is not reached, ) breakshow
+bold (Interleave) breakshow
+roman ( scanning is employed.) breakshow
+bold (
+) breakshow
+roman (A word of warning is necessary at this point. The ) breakshow
+bold (SOI) breakshow
+roman ( in ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( is far from perfect. With certain images you may notice severe distortions caused by a failure of the tolerance code. You can then lower the value of the variable ) breakshow
+bold (tolerance) breakshow
+roman ( \(possibly from 0.1 to 0.05\). Of course, this is not acceptable, but up till now, I have not found a fool-proof way of detecting distortion \(I would greatly appreciate any input you might have on this or any other aspect of ) breakshow
+bold (SOI) breakshow
+roman (. Plus, let me know if you have implemented ) breakshow
+bold (SOI) breakshow
+roman ( or a similar method yourself\).
+The complexity of ) breakshow
+bold (SOI) breakshow
+roman ( cannot be easily compared to previous methods, since it does not depend on the side length of the image.
+The code for ) breakshow
+bold (SOI) breakshow
+roman ( can be found in ) breakshow
+typewriter (soi.c) breakshow
+roman (.) breakshow
+typewriter (
+) breakshow
+roman (
+) breakshow
+heading1 (Iteration Methods) breakshow
+roman (
+
+Selecting an iteration method is done either by selecting a radiobutton or setting the variable ) breakshow
+bold (iterate) breakshow
+roman (, which accepts values from 0 \() breakshow
+bold (Conventional) breakshow
+roman (\) to 2 \() breakshow
+bold (Unroll) breakshow
+roman (\).) breakshow
+bold ( ) breakshow
+roman (Selecting the ) breakshow
+bold (Options) breakshow
+roman ( menu entry will pop up a window containing entries for ) breakshow
+bold (bailout) breakshow
+roman ( and ) breakshow
+bold (maxiter) breakshow
+roman (.
+
+) breakshow
+heading2 (Conventional) breakshow
+roman (
+
+As you might have guessed, this is the most basic algorithm to perform the iteration of a single point. It has no optimizations \(except for obvious ones\). It is a straightforward implementation of the method discussed in ) breakshow
+roman (The Mandelbrot Set) breakshow
+roman (. You can find the code in ) breakshow
+typewriter (conventional.h) breakshow
+roman (.
+
+) breakshow
+heading2 (Optimized) breakshow
+roman (
+
+This routine has two major optimizations, both of which concern themselves with the iteration of points inside ) breakshow
+italic (M) breakshow
+roman (:
+
+1. Periodicity checking
+Recall from section ) breakshow
+roman (The Mandelbrot Se) breakshow
+roman (t that a point is in ) breakshow
+italic (M) breakshow
+roman ( if during iteration its magnitude does not exceed ) breakshow
+bold (bailout) breakshow
+roman (. We know that this is the case for a certain point z\(0\):=c if we discover that z\(i+p\)=z\(i\), i.e. the iteration has entered a cycle. This sounds easy enough, but implementing it proves rather cumbersome since we do not know in advance what p is and saving every z\(i\) and testing it against all its predecessors would take too long. Therefore ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( saves only every ") breakshow
+bold (maxiter) breakshow
+roman (/8"th z, exiting if |z-"saved z"|<pixelsize. This is nowhere near optimal, but suffices to catch a lot of "offenders". If you have a better method, please let me know.
+
+2. Cardioid checking
+If you take a look a the Mandelbrot set, you will notice that most of it is made up of a number of discs that are attached to an object that looks like a sliced apple, which is called a cardioid \(presumably because it looks a little like a heart, too\). With a couple of operations we can check whether a given point lies inside one of those objects and exit if it does \(at least for the main cardioid, and the 3 biggest discs attached to it\). For example, if z=\(r,i\) satisfies \(1/4\)² <= \(r+1\)²+i², it lies inside the disc at \(-1,0\) with radius 1/4.
+Most of the cardioid checking code in ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( was taken from a post by Todd S. Lehman \(toddl@county.lmt.mn.org\) on ) breakshow
+typewriter (sci.fractals) breakshow
+roman (. Also, check out ) breakshow
+italic (The Beauty of Fractals) breakshow
+roman ( \(p.56\).
+
+The code can be found in ) breakshow
+typewriter (optimized.h) breakshow
+roman (.
+
+) breakshow
+heading2 (Unroll) breakshow
+roman (
+
+Besides the optimizations mentioned in the previous paragraph, this method includes a technique that is geared toward reducing the number of instructions used to perform one iteration. The "normal" iteration loop looks something like this:
+
+) breakshow
+typewriter (do
+    {   
+      im=\(im+im\)*re+cim;
+      re=rq-iq+cre;
+      rq=re*re;
+      iq=im*im;
+      /* maybe some periodicity checking here */
+    }
+while \(i++<=maxiter && rq+iq<bailout\);
+) breakshow
+roman (
+As you can see, this process involves 3 floating point multiplies. We would be able to eliminate one of them if we didn't have to check for ) breakshow
+bold (bailout) breakshow
+roman ( on each iteration. And that's exactly what we do: We unroll the loop and check for the bound only every n-th time.
+
+) breakshow
+typewriter (do
+    {
+      /* do this n times */
+      i1 = \(im+im\)*re+cim;
+      r1 = \(re+im\)*\(re-im\)+cre;
+      
+      /* now check the bound once */
+      rq = rn*rn;
+      iq = in*in;
+      if\(rq+iq>bailout\)
+      {
+       /* determine correct iter and return */       
+      }
+      i+=n;
+    }
+while \(i<maxiter\);
+
+) breakshow
+roman (In addition to saving one multiplication \(which in fact isn´t such a big savings on modern processors such as the Pentium\) the comparison and looping overhead can be avoided. This turns out to be an even greater advantage, especially for Intel processors where floating point comparisons are very costly.
+There are a couple of problems, though. First of all, we are running the risk of doing too many iterations if we don't check the bound each time, but if ) breakshow
+bold (maxiter) breakshow
+roman ( is large compared to the number of unrolled iterations the time-savings outweigh the overhead. Secondly, the magnitude of z can get very large after it surpasses bailout, generating a floating-point exception. Therefore, ) breakshow
+bolditalic (AlmondBread) breakshow
+roman ( unrolls only to a depth of eight, which seems to be safe for IEEE 754 doubles. Thirdly, it has to be determined when exactly the ) breakshow
+bold (bailout) breakshow
+roman ( value was exceeded in order to color the corresponding pixel correctly. Nick Haines \(nickh@cmu.edu\) suggested doing an "exponent correction hack", which uses the exponent of the magnitude of z to determine the correct iteration number. It is based on the observation that after |z| surpasses ) breakshow
+bold (bailout) breakshow
+roman (, its exponent is doubled on each consecutive iteration. However, this works only for ) breakshow
+bold (bailout) breakshow
+roman ( values larger than 4.
+The code is in ) breakshow
+typewriter (unroll.h) breakshow
+roman (.
+
+) breakshow
+heading1 (Coloring Schemes) breakshow
+typewriter (
+
+) breakshow
+roman (Selecting a coloring scheme is done either by selecting a radiobutton in the ) breakshow
+bold (Coloring) breakshow
+roman ( menu or setting the variable ) breakshow
+bold (scheme) breakshow
+roman ( to a value in the range of 0-2, where 0 corresponds to ) breakshow
+bold (Normal) breakshow
+roman ( and 2 represents ) breakshow
+bold (Decomposition) breakshow
+roman (.) breakshow
+bold ( ) breakshow
+roman (Selecting the ) breakshow
+bold (Options) breakshow
+roman ( menu entry will pop up a window containing entries that control variables pertaining to the currently selected color scheme.
+
+) breakshow
+heading2 (Normal) breakshow
+roman (
+
+This coloring scheme will color a pixel according to the level of iteration where the magnitude of z got bigger than ) breakshow
+bold (bailout) breakshow
+roman ( \(therefore sometimes termed ) breakshow
+bold (Level Set Method) breakshow
+roman (\).
+
+) breakshow
+heading2 (Potential) breakshow
+roman (
+
+This method yields smoother contours of the color bands than ) breakshow
+bold (Normal) breakshow
+roman ( at the cost of slower computation. The equipotential lines computed by this method are lines of equal escape time towards infinity \(as are the bands computed by ) breakshow
+bold (Normal) breakshow
+roman (, albeit on a much cruder basis\). Consult ) breakshow
+italic (The Beauty of Fractals) breakshow
+roman ( and ) breakshow
+italic (The Science of Fractal Images) breakshow
+roman ( for mathematical details.
+The potential is computed as 
+        ) breakshow
+typewriter (pot := maxcolor - slope * log\( |z\(n\)| \) / 2^n) breakshow
+roman (
+) breakshow
+bold (maxcolor) breakshow
+roman ( is the maximum value for pot, values <0 will be "truncated" to 1.
+) breakshow
+bold (slope) breakshow
+roman ( affects the width of the color bands.
+z\(n\) is the value of z at the end of iteration, i.e. the value it holds when ) breakshow
+bold (bailout) breakshow
+roman ( is reached, after n iterations.
+The names of the variables are the same as in ) breakshow
+bold (Fractint) breakshow
+roman (.
+
+) breakshow
+heading2 (Decomposition) breakshow
+roman (
+
+This method determines the color for pixel p on the basis of the angle of z\(n\) in polar coordinates, where z\(n\) is the value of z at the end of iteration. The normal representation of complex numbers is as a pair of real numbers \(r,i\) where r describes the real part and i the imaginary one. You can also describe a complex number completely by its radius \(magnitude\) and angle on a plane with real and imaginary axes. The ) breakshow
+bold (arity) breakshow
+roman ( parameter determines how many segments the circle of possible angle values is divided into, i.e. if ) breakshow
+bold (arity) breakshow
+roman ( is 2 p will be colored according to whether the imaginary part of z\(n\) is positive or negative. Again, try ) breakshow
+italic (The Science of Fractal Images) breakshow
+roman ( or ) breakshow
+italic (The Beauty of Fractals) breakshow
+roman ( for an in-depth explanation. ) breakshow
+bold (arity) breakshow
+roman ( 256 and a nicely shaded colormap gives beautiful pictures.
+) breakshow
+bold (
+) breakshow
+heading1 (The Zoombox) breakshow
+bold (
+
+) breakshow
+roman (Instead of using the interface entries to set the image coordinates you can also use the zoombox. To bring bring up the zoombox at any time just press button #2 in the image window. Dragging the mouse with button #1 pressed will resize the zoombox while moving the mouse with all buttons up will move the zoombox around. Double-clicking mouse button #1 or typing ) breakshow
+bold (<Return>) breakshow
+roman ( will perform a zoom-in whereas double-clicking button #3 or typing ) breakshow
+bold (<Control-Return>) breakshow
+roman ( will do a zoom-out. Zooming out means that the old image will be located at the position of the zoombox in the new image. A zoom will automatically trigger the ) breakshow
+bold (GO) breakshow
+roman ( button after coordinate recalculation is complete. Pressing button #2 with the zoombox up will get rid of it.
+
+) breakshow
+heading2 (Resizing) breakshow
+roman (
+
+A different way of manipulating coordinates is to resize the image interactively using the mouse. How this is done is up to your window manager, but it usually involves dragging out the corners of the window. This can be done with both the image window and the colormap window. The latter, however, is gridded, meaning you can change the size in either direction only in multiples of n \(16 in this case, since the colormap has 256 entries\). The bottom-left coordinates will not be affected by a resize, i.e. no matter which corner you drag out, it will always seem as if the top-right corner was dragged \(in X terminology, this would be called south-west gravity, I think\).
+) breakshow
+heading2 (
+) breakshow
+heading1 (Copyright) breakshow
+heading2 (
+
+) breakshow
+roman (Portions of the code contained in ) breakshow
+typewriter (appinit.c) breakshow
+roman ( and most of ) breakshow
+typewriter (main.c) breakshow
+roman ( is
+Copyright © 1990-1994 The Regents of the University of California.
+Copyright © 1994-1995 Sun Microsystems, Inc.
+
+Most of ) breakshow
+typewriter (ppmtogif.c) breakshow
+roman ( is
+Copyright © 1989 Jef Poskanzer.
+
+Most of ) breakshow
+typewriter (giftoppm.c) breakshow
+roman ( is
+Copyright © 1990 David Koblas.
+
+) breakshow
+typewriter (general.c) breakshow
+roman ( contains routines from ) breakshow
+typewriter (xfractint\(1\)) breakshow
+roman ( and is therefore
+Copyright © 1991 Ken Shirriff.
+
+All code for ) breakshow
+bolditalic (AlmondBread) breakshow
+roman (  not covered by the above copyright exceptions is
+Copyright © 1994) breakshow
+bolditalic (-) breakshow
+roman (1997 Michael R. Ganss. All Rights Reserved.
+
+Consequently, it is subject to the following copyright conditions:
+
+1. You may use, copy, modify, and distribute this software and its documentation for any non-commercial purpose free of charge.
+2. The above copyright notice and this conditions notice must appear in all \(modified or unmodified\) copies and supporting documentation.
+3. This software is provided "as is" without express or implied warranty.
+4. You may use, copy, modify, and distribute this software and its documentation for a commercial purpose \(i.e. for a profit\) if a royalty in the amount of $5 per copy sold or 5% of the total sale price per copy sold \(whichever is more\) is paid to Michael Ganss \(rms@cs.tu-berlin.de\).
+) breakshow
+typewriter (
+
+
+) breakshow
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PostScript epilogue for jstools (jtagconvert.tcl)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+showpage

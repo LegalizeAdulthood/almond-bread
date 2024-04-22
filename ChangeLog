@@ -1,0 +1,16 @@
+changes in 0.21 (4/1/97):
+
+-removed several incompatibilities with Tk4.0.
+-own main.c for every version of Tk. Seems to be the only way that works.
+-now definitely works under 4.0, 4.1, and 4.2.
+
+changes in 0.22:
+
+-Makefile has pkzip support.
+-fixed Makefile bug (JSTOOLS_LIB in almond script).
+-Zoombox now uses GXinvert GC function. GXxor had problems on 16bit
+displays.
+-fixed other bugs with 16bit displays.
+-Own Colormap feature excluded for TrueColor and DirectColor Visuals.
+-experimental Multithreading support (Posix 1003.1c threads).
+-overhauled unroll iteration method, a whole lot faster now.

@@ -1,0 +1,93 @@
+.TH ALMONDBREAD 1 "June 13, 1997" "AlmondBread V0.22"
+.SH NAME
+AlmondBread - generate images of the Mandelbrot set
+.SH SYNOPSIS
+.IP \fBalmond\fR 10
+[\fIfileName\fR] [\fB-colormap new\fR]
+[\fB-display \fIdisplay\fR] [\fB-geometry \fIgeometry\fR] [\fB-name
+\fIname\fR] [\fB-sync\fR] [\fB-visual\fR \fIvisual\fR] [\fB-help\fR]
+[\fB--\fR]
+.SH DESCRIPTION
+\f(BIAlmondBread\fR is yet another program which calculates and displays
+images of the Mandelbrot set. It has a nice user interface (written in
+\fBTcl/Tk\fR) whose \fB``Help''\fR menu entry should be consulted for
+an in-depth
+explanation of the functions and concepts of \f(BIAlmondBread\fR. Here
+are some of \f(BIAlmondBread\fR's features:
+.IP \(bu 3
+Fast algorithms, among them an implementation of \fISimultaneous Orbit
+Iteration\fR.
+.IP \(bu 3
+Save/Load \fBFractint\fR-compatible GIF files.
+.IP \(bu 3
+Load \fBFractint\fR-style colormap files (\f(CR.MAP\fR files).
+.IP \(bu 3
+Shared or own colormap using an allocation scheme similar to that of
+\fBxv\fR.
+.IP \(bu 3
+Easy-to-use zoombox function.
+.LP
+In order for \f(BIAlmondBread\fR to work, you need to have \fBTcl/Tk\fR and
+the \fBjstools\fR-package installed on your system. \fBTcl/Tk\fR can
+be obtained at \f(CRhttp://www.smli.com/research/tcl\fR, \fBjstools\fR
+is at \f(CRhttp://shore.net/~js/js-jstools.html\fR.
+.SH OPTIONS
+.IP "\fIfileName\fR" 15
+Read commands from \fIfileName\fR rather than standard input.  The
+last element in \fIfileName\fR will be used as the title for the
+application and name of its interpreter for \fBsend\fR
+commands (unless overridden by the \fB\-name\fR option\fR).
+.IP "\fB\-colormap new\fR" 15
+Specifies that the interface window should have a new private colormap
+instead of using the default colormap for the screen.
+.IP "\fB\-display \fIdisplay\fR" 15
+Display (and screen) on which to display window.
+.IP "\fB\-geometry \fIgeometry\fR" 15
+Initial geometry to use for the interface window. If this option is
+specified, its value is stored in the \fBgeometry\fR global variable
+of \f(BIAlmondBread\fR's Tcl interpreter.
+.IP "\fB\-name \fIname\fR" 15
+Use \fIname\fR as the title to be displayed in the window, and
+as the name of the interpreter for \fBsend\fR commands.
+.IP "\fB\-sync\fR" 15
+Execute all X server commands synchronously, so that errors
+are reported immediately.  This will result in much slower
+execution, but it is useful for debugging.
+.IP "\fB\-visual\fR \fIvisual\fR" 15
+Specifies the visual to use for the interface window. \fIVisual\fR may have
+any of the forms supported by the \f(CRTk_GetVisual\fR procedure.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit.
+.IP "\fB\--\fR" 15
+Pass all remaining arguments through to the script's \fBargv\fR variable
+without interpreting them. This provides a mechanism for passing
+arguments such as \fB-name\fR to a script instead of having
+\f(BIAlmondBread\fR interpret them.
+.SH FILES
+.IP ~/.almondrc 15
+Startup file for \f(BIAlmondBread\fR.
+.SH AUTHOR
+Michael R. Ganss (rms@cs.tu-berlin.de)
+.SH COPYRIGHT
+Copyright \(co 1994-1997 Michael R. Ganss. All Rights Reserved.
+.br
+See the \fB``Help''\fR menu entry for a full statement of rights and
+permissions.
+.SH BUGS
+.IP - 3
+Customization is too difficult, the program is too incoherent, too
+many files are needed. I'd like to have \f(BIAlmondBread\fR be a
+single executable file without the score of Tcl files that are
+currently needed.
+.IP - 3
+There is a conceptual incoherence regarding the question of when to
+stop image generation in the event of a parameter change or invocation
+of menu entries (e.g. should computation continue if maxiter
+changes?).
+.IP - 3
+Basing the time on ``after ...'' is very inaccurate (maybe not because
+of ``after'' itself but rather my abuse of it).
+.LP
+There are zillions more...
+.SH SEE\ ALSO
+\fBxfractint\fR(1)

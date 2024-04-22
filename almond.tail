@@ -1,0 +1,24 @@
+#startup code below
+
+if {[info exists env(JSTOOLS_LIB)]} {
+    set jstools_library $env(JSTOOLS_LIB)
+} else {
+    set jstools_library /usr/local/lib/jstools
+}
+  
+# add the jstools library to the library search path:
+set auto_path [concat [list $jstools_library] $auto_path]
+
+# check for ~/.tk and prepend it to the auto_path
+# if it exists.  that way the user can override 
+# and customize the jstools libraries.
+if {[file isdirectory ~/.tk]} then {
+    set auto_path [concat [list [glob ~/.tk]] $auto_path]
+}
+
+j:jstools_init
+
+j:source_config -directory $abdir color.tcl
+j:source_config -directory $abdir zoombox.tcl
+j:source_config -directory $abdir interface.tcl
+j:source_config -directory $abdir about.tcl

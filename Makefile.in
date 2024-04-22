@@ -1,0 +1,119 @@
+# Makefile for AlmondBread
+SHELL=/bin/sh
+
+# Common prefix for installation directories.
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+# This is where the binaries go
+bindir=@bindir@
+
+# This is where the man page goes
+mandir=@mandir@/man1
+
+# This is where the Tcl-files go; it is usually the standard
+# Tk library directory
+tcldir=$(prefix)/lib/tk
+
+# This is where the jdoc-file goes
+# jdoc looks in .:~/tk/jdoc/:~/.tk/jdoc:$jstools_library/jdoc:$tk_library/jdoc
+# but you can put it anywhere since we make a cd to $(helpdir)
+# before execing jdoc
+helpdir=$(tcldir)/jdoc
+
+# The directory where jdoc can be found
+jdoc=@jdoc@
+
+# The directory where the jstools library files can be found
+jstools=@jstools@
+
+# The directory where Tcl/Tk include-files can be found must be specified here
+tclinclude=@tclinclude@
+tkinclude=@tkinclude@
+
+# Add the path to libtcl.a, libtk.a here
+tcllib=@tcllib@
+tklib=@tklib@
+
+# Compiler to use, gcc is strongly recommended
+CC=@CC@
+
+INCLUDE=-I$(tclinclude) -I$(tkinclude) -I@x_includes@
+
+CFLAGS=@CFLAGS@ $(INCLUDE)
+#CFLAGS=-Wall -O6 -funroll-loops -fforce-mem -fforce-addr -ffast-math -fomit-frame-pointer -freg-struct-return -funroll-all-loops $(INCLUDE)
+
+LDFLAGS=-L@x_libraries@ -L$(tklib) -L$(tcllib) -s
+
+OBJS=appinit.o raster.o compute.o main.o trace.o scan.o interleave.o gif.o ppmtogif.o giftoppm.o fractint.o general.o string.o tesseral.o soi.o boundary.o
+
+SRCS=$(OBJS:.o=.c)
+
+TCLSRC=color.tcl zoombox.tcl interface.tcl about.tcl
+
+LIBS=-ltk -ltcl -lX11 -lm @LIBS@
+
+all: almond bread
+
+bread: $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o bread $(OBJS) $(LIBS)
+
+almond: almond.tail Makefile
+	@echo '#!$(bindir)/bread ' > ./almond.head
+	@echo 'set abdir $(tcldir)' >> ./almond.head
+	@echo 'set helpdir $(helpdir)' >> ./almond.head
+	@echo 'global env; append env(PATH) :$(jdoc)' >> ./almond.head
+	@echo 'global env; set env(JSTOOLS_LIB) $(jstools)' >> ./almond.head
+	@cat ./almond.head ./almond.tail > ./almond
+	@rm -f ./almond.head
+	@chmod 0755 ./almond
+
+depend:
+	makedepend -- $(CFLAGS) -- $(SRCS)
+
+config: configure conf.h.in Makefile.in
+	./configure
+
+install: almond bread
+	./install-sh -d $(bindir)
+	./install-sh almond $(bindir)
+	./install-sh bread $(bindir)
+	./install-sh -d $(tcldir)
+	./install-sh -m 0644 color.tcl $(tcldir)
+	./install-sh -m 0644 zoombox.tcl $(tcldir)
+	./install-sh -m 0644 interface.tcl $(tcldir)
+	./install-sh -m 0644 about.tcl $(tcldir)
+	./install-sh -m 0644 almond.ppm $(tcldir)
+	./install-sh -d $(helpdir)
+	./install-sh -m 0644 AlmondBread.jdoc $(helpdir)
+	./install-sh -d $(mandir)
+	./install-sh -m 0644 AlmondBread.1 $(mandir)
+	./install-sh -m 0644 -t=d -b=almond.1 AlmondBread.1 $(mandir)
+
+uninstall:
+	rm -f $(bindir)/almond
+	rm -f $(bindir)/bread
+	cd $(tcldir); rm -f $(TCLSRC) almond.ppm
+	rm -f $(helpdir)/AlmondBread.jdoc
+	rm -f $(mandir)/AlmondBread.1
+
+dist:
+	rm -fr AlmondBread-0.22
+	mkdir AlmondBread-0.22
+	cp $(SRCS) main?*.c $(TCLSRC) *.h *.map *.gif AlmondBread.jdoc AlmondBread.1 AlmondBread.html AlmondBread.ps almond.tail almond.ppm Makefile.in configure.in configure conf.h.in install-sh README INSTALL ChangeLog WishList AlmondBread-0.22
+	tar cvf AlmondBread-0.22.tar AlmondBread-0.22
+
+zdist:	dist
+	gzip -f AlmondBread-0.22.tar
+
+zip:	zdist
+	rm -f almond.zip
+	zip -r almond AlmondBread-0.22
+
+clean:
+	rm -f core almond bread $(OBJS)
+
+distclean: clean
+	rm -f config.* conf.h Makefile
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.

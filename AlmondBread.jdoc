@@ -1,0 +1,327 @@
+{AlmondBread 0.22
+
+Introduction
+
+AlmondBread is yet another program which calculates and displays images of the Mandelbrot set.
+It is certainly not as versatile as e.g. Fractint, but I think it can be fun to play with nonetheless, particularly because of its nice interface (courtesy of Tcl/Tk), fast algorithms and flexible colormap handling. Here are some more of AlmondBread's features:
+
+- Fast algorithms, among them an implementation of Simultaneous Orbit Iteration
+   (see Drawing Methods).
+- Save/Load Fractint-compatible GIF files (see The File Menu).
+- Load Fractint-style colormap files (.MAP files).
+- Shared or own colormap using an allocation scheme similar to that of xv(1)
+   (see The Colormap Menu).
+- Easy-to-use zoombox function (see The Zoombox).
+
+AlmondBread was written by Michael Ganss, rms@cs.tu-berlin.de.
+Please contact me if you discover any bugs, have fixes for them or any other ideas that might aid in the improvement of this software, including favorable comments as well.
+For copyright information see Copyright.
+
+Invocation
+
+	almond [fileName] [-colormap new] [-display display]
+	[-geometry geometry] [-name name] [-sync] [-visual visual] 
+	[-help] [--]
+
+The options are as follows:
+
+fileName
+	Read commands from fileName rather than standard input.
+
+-colormap new
+	Specifies that the interface window should have a new private colormap
+	instead of using the default colormap for the screen.
+
+-display display
+	Display (and screen) to use.
+	
+-geometry geometry
+	Initial geometry to use for the interface window. If this option is specified, its 
+	value is stored in the geometry global variable of AlmondBread's Tcl
+	interpreter.
+
+-name name  
+	Use name as the title to be displayed in the interface window, and as the 
+	name of the interpreter for send commands.
+
+-sync      
+	Execute all X server commands synchronously, so that errors are reported 
+	immediately. This will result in much slower execution, but it is useful for 
+	debugging.
+
+-visual visual
+	Specifies the visual to use for the interface window. Visual may have any of
+	the forms supported by the Tk_GetVisual procedure.
+	
+-help      
+	Print a summary of the command-line options and exit.
+
+--
+	Pass all remaining arguments through to the script's argv variable without
+	interpreting them. This provides a mechanism for passing arguments such
+	as -name to a script instead of having AlmondBread interpret them.
+
+You can abbreviate all options, e.g. -n is as good as -name.
+
+Once you have succesfully started the program in interactive mode, i.e. without the initial fileName option and not from within a script, you are in a Tcl shell which you can type regular Tcl commands to. There are a number of Tcl variables that you can manipulate in order to influence AlmondBread's behavior. I'll try to mention their names at the appropriate places.
+
+If you start AlmondBread in interactive mode, the file ~/.almondrc will be sourced at the beginning (if it exists). The variable abdir holds a directory name, which decides where AlmondBread looks to find its startup .tcl files. Its default value is ~/.tk.
+
+In order for AlmondBread to work at all, you need to make sure that you have the jstools-package installed on your system (either in the default Tk library directory or in ~/.tk). But since you are probably reading this via jdoc, there's not much point in telling you this now. More information about jstools is available at http://www.cs.uoregon.edu/docs/jstools/jstools.html.
+
+The Mandelbrot Set
+
+This section describes some of the basic mathematical concepts behind the Mandelbrot set and its generation.
+
+The Mandelbrot set - or M - was discovered in 1980 by mathematician Benoit B. Mandelbrot. It is considered to be the most complex object mathematics has ever seen [1].
+
+In [2] M is defined as follows:
+"The Mandelbrot set is the set of all complex numbers c such that iterating z -> z² +c does not go to infinity (starting with z=0)". 
+It can be shown that the sequence diverges if the magnitude of z exceeds 2.
+
+The Algorithm
+
+The basic algorithm to generate an image of M and its basin of attraction for a given region R in the complex plane goes like this:
+For each pixel p representing a point c in R do the following:
+
+1. z := 0, n := 0.
+2. z := z²+c.
+3. n := n+1.
+4. If |z|<2 and n<N go to 2.
+
+N is the maximum number of iterations you allow (smaller values mean faster execution, larger ones better accuracy). It can be set by either modifying the variable maxiter, or using the interface entry in the Options submenu of the Iteration Methods menu.
+If the iteration loop terminates because n>=N, there is a good chance c lies in M, so you can color p accordingly. In AlmondBread, the variable inside, accessible through the Options submenu of the Coloring Schemes menu, controls how pixels in M are colored. The value is an index into the colormap and thus ranges from 0-255.
+If, however, |z|>=2 then p lies outside of M and you can color p according to the number of iterations when z "bailed out", i.e. according to n. In AlmondBread, pixels outside of M are colored "n mod colors", where colors is a Tcl variable that is initially set to the number of colors available on the X screen, but can be modified to limit the actually used colors to a smaller range (not something you would normally want to do). It is also set if an image is loaded that uses a smaller number of colors (e.g. a Fractint image that was created in a VGA mode such as 640x480x16).
+The region R can be defined through the interface by using the entries left, right, and bottom. The top is set automatically to ensure that each pixel covers a square area in the complex plane, i.e. there is no distortion. You can, however, force a different value by setting the variables minr, maxr (the minimum and maximum value on the real axis) and mini, maxi (ditto for the imaginary axis). minr, maxr correspond directly to left, right, whereas mini, maxi are defined as (-top), (-bottom) respectively. This is due to implementational reasons (pixel values always start from the top left, whereas the cartesian plane starts on the bottom left).
+Although it is safe to assume that a point whose magnitude is larger than 2 lies outside M, you can adjust the bailout value through the variable bailout or its corresponding entry in the Options submenu of the Iteration Methods menu. Higher values will yield smoother boundaries.
+Generating an image in AlmondBread is a three-layered process. First, one of the Drawing Methods determines how a set of pixels is computed. The Iteration Methods define the way an individual iteration is carried out. Thus, they pertain only to the generation of a single pixel (as you will see, SOI makes an exception from this rule). Finally, the Coloring Schemes determine how a single pixel is colored once iteration for it is complete.
+
+References
+
+[1]	Peitgen, H.-O., Saupe, D., et al.
+	The Science of Fractal Images
+	Springer Verlag, Berlin, 1988
+	
+[2]	Shirriff, K.
+	The sci.fractals FAQ
+	Posted monthly on sci.fractals, news.answers
+	http://spanky.triumf.ca/pub/fractals/docs/SCI_FRACTALS.FAQ
+
+For more on the subject, I can also recommend:
+
+	Peitgen, H.-O., Richter, P.H.
+	The Beauty of Fractals
+	Springer Verlag, Berlin, 1986
+
+	Giffin, Noel
+	The Spanky Fractal Database
+	contains all the information you'll ever need about fractals
+	http://spanky.triumf.ca/.
+
+The File Menu
+
+Besides using the mouse the File Menu can be invoked by pressing Alt-f (the Alt key may have a different name on your keyboard, but it is synonymous with the mod2 key modifier; consult xmodmap(1) if you are unsure) or F10.
+
+Loading a file
+
+If you invoke the menu entry Load, you will be prompted for a file name. I assume you know how a file browser works. One feature worth mentioning, though, is Emacs-style name completion (or at least a subset thereof) with the Tab-key.
+You can load any GIF file. If it has a Fractint application extension (meaning a file that was saved by a program of the Fractint family), it is recognized as well and all parameters that are supported by AlmondBread are set automatically (like maxiter, inside etc.). If the fractal type is anything other than mandel or mandelfp, the file will be treated like an ordinary GIF, i.e. the extension will be disregarded. In this case, all picture information will be lost once you hit the GO button, and the same image as before the load will be generated (albeit with a different resolution and/or colormap).
+
+Saving a file
+
+This works analogous to the Load operation. The file saved will be in GIF89 format with a Fractint application extension. The data structure used by AlmondBread corresponds to the one used in Fractint version 18.2, although you should be able to read the file with any version later than 14. All parameters that are not supported by AlmondBread are set to default values.
+
+Quit
+
+Invoking this menu option will close all windows and terminate AlmondBread.
+
+The Colormap Menu
+
+Own Colormap
+
+If this checkbutton is switched "on", AlmondBread will install its own colormap for displaying the generated image. On an 8-Bit Display, this means AlmondBread will have 256 colormap entries at its disposal, no matter how many other programs occupy resources in the shared colormap. Therefore, the subsequent color allocation will typically succeed in getting all the colors it wants (color allocation is necessary, because even though we have a new, empty colormap it is possible this colormap has less than 256 entries, e.g. on a 6-Bit display). On the other hand, you will notice that once a window other than AlmondBread has the focus its colormap (usually the shared colormap) is installed, thus f-ing up AlmondBread's colors (of course this goes the other way round, too).
+The command that is attached to the checkbutton does nothing more than configure the raster widget in the image window like this: .r conf -owncmap yes (metaphorically speaking... Of course there is some extra code for status output etc.). The real work is done by the widget routines.
+If the checkbutton gets switched "off" (this is the default), AlmondBread will allocate its colors from the shared colormap, which is used by many other X clients as well (e.g. your window manager) and therefore oftentimes does not provide enough "free" entries to suit the needs of AlmondBread's colormap. Hence a method needs to be employed to use the resource "colors" in an efficient manner, making generated images resemble their imaginary counterparts with an own colormap as closely as possible. AlmondBread uses an algorithm similar to that in John Bradley's xv program [1]. First, it arranges the 256 original colors in order of importance using the diversity algorithm. Then, it tries to allocate those colors. In the next phase, for each color that went unallocated the algorithm tries to allocate the color that is closest in the X colormap. Finally, all colors that are still unallocated by now are mapped into those that were successfully allocated in previous phases.
+The status line at the bottom of AlmondBread's interface will tell you how many colors were allocated in which phase.
+
+Show Colormap
+
+If you switch this checkbutton "on", a window showing the current colormap used by AlmondBread will pop up. It contains a raster widget whose owncmap option is coupled to that of the main raster widget, so you will see the correct colormap even if owncmap is in use. The colors are displayed in order from top left (0) to bottom right (255). You can remove the window by either unselecting the checkbutton or clicking on button #3 in the window.
+
+Loading a Colormap
+
+If you select this option, you will be prompted for the name of a colormap file. This file should be in the Fractint .map format, i.e. a text file containing one color per line with RGB values ranging from 0-255 (to put it another way, entries should be readable with fscanf(file, "%d %d %d", &r, &g, &b), so this is a valid line: "0 0 255 Blue").
+If a file has fewer than 255 entries, the missing ones are assumed to be all black.
+
+References
+
+[1]	Bradley, John (bradley@cis.upenn.edu)
+	xv Manual
+	Appendices E and F
+	ftp://ftp.cis.upenn.edu/pub/xv/
+
+
+Drawing Methods
+
+You can select any of the drawing methods described below by selecting the corresponding radiobutton in the user interface or by setting the variable method to one of the values 0-3.
+0 means scan and 3 will select SOI. Selecting the Options entry will pop up a window containing entries that control variables for the currently selected drawing method.
+
+Scan
+
+This is the simplest method of generating an image of M. As its name suggests, this algorithm simply scans the chosen region from top to bottom, doing a complete iteration for each pixel on the screen (well, at least half the pixels, since for most coloring schemes the symmetrical properties of the generated image can be taken advantage of). The complexity of the algorithm is in O(n²), where n is proportional to the side length of the image. For implementational details check out the file scan.c.
+
+Interleave
+
+This algorithm is significantly faster than the Scan algorithm. However, it can be inaccurate to some extent. The idea is the following: For each i consecutive pixels, compute only one. If its color matches that of the previous computed pixel, assume all i are of same color and go on. If not, go back one pixel at a time until it matches the "saved" color (plotting each of those different colored pixels along the way, of course). Now, plot the whole line of unique color defined by the first point of "saved" color and the last. The parameter i can be controlled through the variable interleave or the Options submenu.
+Obviously, this is very fast for images containing large areas of a single color, but may err in images with fine filaments extending through areas of few colors. Thus, it follows the same policy as Fractint's solid-guessing logic. Its complexity is O(c * n²), with 1/i<=c<=1. For further details, check out interleave.c.
+
+Tesseral
+
+This method is an imitation of Fractint's mode of same name. Although in most cases it is not as fast as Interleave, it has a nice theoretical approach and is fun to look at. It makes use of the Mandelbrot set's connectedness property, which has as a consequence that there cannot be a region of one color inside a rectangle of another color, i.e. once you find that the sides of a rectangular region are of a single color, it is safe to assume the whole rectangle to be of said color (with some margin of error, of course, since strictly speaking one pixel defines a region, not just one point). The procedure used to generate the image is this:
+
+1. Compute the border of the region, keeping track of the number of colors used.
+2. If only one color was used, we assume the whole region to be of that color and "blit" it in.
+3. If more than one color was used, we subdivide the image into 2 smaller ones and calculate them recursively (stopping at a certain minimum side length, beyond which we use scanning to finish up the image. This minimum side length can be modified through the variable goscanat or the Options menu).
+
+There are some details I think are worth elaborating on. First, AlmondBread's algorithm subdivides at least once to avoid "blitting" in the initial image. Secondly, it skips computing those edges of the image that were already done in the previous stage (which is either 3 or all 4 using the "DIN" approach). Thirdly, AlmondBread uses the "DIN" approach to subdividing the image (I call it that because of the way paper sizes in the DIN system are related, e.g. DIN A5 is half the size of DIN A4). This means simply that subdividing in horizontal or vertical direction is done in alternating fashion, which has proven to be very efficient over other methods like 4-way splitting.
+The complexity of the Tesseral algorithm is in O(n * log(n)). The code is located in tesseral.c.
+
+Boundary Tracing
+
+The Boundary Tracing method takes the idea that led to the Tesseral algorithm one step further. The fact that the Mandelbrot set is connected, implies that there won't be areas of one color "inside" areas of a different color. This means, that if you trace the boundary of a region of a single color, i.e. determine the connected set of pixels of one color whose members have at least one neighboring pixel of a different color, all the pixels inside that area will have that one color also. Color in this context refers to the iteration value of a single pixel. The algorithm is this:
+We scan the whole screen pixel by pixel, keeping an offscreen map of iteration values for each pixel (initially set to all -1s to signal "not done"). If we hit a pixel not done, we start tracing its border going right and keeping the "wall" to our left until we get back to the starting point. For each pixel, the next pixel visited will be computed thus:
+
+a) check pixel to left (looking in the current direction, i.e. if the current direction is right, the pixel to the left is the one above it). If it's part of the wall (i.e. offscreen or a different color than the one we're tracking), go to b). If it's not, it is the next pixel.
+b) do same for pixel straight ahead. Go there if it's not part of the wall.
+c) ditto for pixel to the right. If this pixel is also part of the wall, go back one pixel.
+   
+When we're back at the starting point we trace the boundary once more. Now, whenever we move up, we plot pixels to the right of the current one until we hit the wall.
+
+This method was inspired by a post on sci.fractals by Maarten Egmond (cp@stack.urc.tue.nl).
+The complexity of the Boundary Tracing algorithm is in O(n²). The code is in boundary.c.
+
+SOI
+
+SOI stands for Simultaneous Orbit Iteration. It was "invented" by Steven Stoft and introduced in his program Fractal Witchcraft (http://spanky.triumf.ca/pub/fractals/programs/IBMPC/FW1-08.ZIP). Most of the information I had about the method before starting out came from a response to my inquiry about Fractal Witchcraft's speed from Robert P. Munafo (mrob@world.std.com) on sci.fractals.
+As you may recall from section The Mandelbrot Set, calculating M involves an iterative process, which means on successive iterations one point is mapped onto another one. Now, if we look at not only one point but a whole set of points, say a rectangle, these points get mapped onto a different set of points in the complex plane. If this (iterated) set of points is still a rectangle, we can make the reasonable assumption that in order to obtain the iterated value for a point inside the original rectangle all we have to do is a linear interpolation, i.e. determine where the point in the original rectangle would be in the new, iterated rectangle if we had merely "resized" it and moved it to the new location (which in effect is what we have done by iterating). To put it in other words, if point x is in the middle of the rectangle before iterating it will be in the middle of the iterated rectangle also. 
+The problem is that for a given rectangle the iterated point set is very rarely a perfect rectangle. The approach used by AlmondBread involves a polynomial interpolation of 2nd degree (using Newton interpolation). For every rectangle we have 9 key points plus four test points. All points are iterated and the test points are interpolated. If the ratio of iterated to interpolated test points is greater than an allowed margin, we subdivide, proceeding in a fashion similar to the Tesseral algorithm (using a 4-way split, though). Otherwise, we do the iterating and interpolating over until we have to split or maxiter is reached, in which case we simply fill the rectangle and exit. This may sound trivial at first, but the whole interpolating stuff can get pretty confusing after a while, particularly when you have to interpolate certain points and don't know which key points to use (just take a  look at the subdividing part in the code), but this is mainly due to my quick'n'dirty implementation tactics.
+SOI does a very good job on images that have a high number of average iterations, typically very deep zooms that take a long time using other algorithms such as Interleave. It does not do as good a job on low-magnification images, because unlike Interleave, for example, SOI has a large organizational overhead. There are a few tricks, however, which can make SOI as fast or even faster on low-magnificaction images. The main problem with low-magnification images is that the number of simultaneous iterations is very small and you have to subdivide after very few iterations. Therefore, AlmondBread has a minprogress variable, which controls the minimum number of iterations required to allow subdividing. If this number is not reached, Interleave scanning is employed.
+A word of warning is necessary at this point. The SOI in AlmondBread is far from perfect. With certain images you may notice severe distortions caused by a failure of the tolerance code. You can then lower the value of the variable tolerance (possibly from 0.1 to 0.05). Of course, this is not acceptable, but up till now, I have not found a fool-proof way of detecting distortion (I would greatly appreciate any input you might have on this or any other aspect of SOI. Plus, let me know if you have implemented SOI or a similar method yourself).
+The complexity of SOI cannot be easily compared to previous methods, since it does not depend on the side length of the image.
+The code for SOI can be found in soi.c.
+
+Iteration Methods
+
+Selecting an iteration method is done either by selecting a radiobutton or setting the variable iterate, which accepts values from 0 (Conventional) to 2 (Unroll). Selecting the Options menu entry will pop up a window containing entries for bailout and maxiter.
+
+Conventional
+
+As you might have guessed, this is the most basic algorithm to perform the iteration of a single point. It has no optimizations (except for obvious ones). It is a straightforward implementation of the method discussed in The Mandelbrot Set. You can find the code in conventional.h.
+
+Optimized
+
+This routine has two major optimizations, both of which concern themselves with the iteration of points inside M:
+
+1. Periodicity checking
+Recall from section The Mandelbrot Set that a point is in M if during iteration its magnitude does not exceed bailout. We know that this is the case for a certain point z(0):=c if we discover that z(i+p)=z(i), i.e. the iteration has entered a cycle. This sounds easy enough, but implementing it proves rather cumbersome since we do not know in advance what p is and saving every z(i) and testing it against all its predecessors would take too long. Therefore AlmondBread saves only every "maxiter/8"th z, exiting if |z-"saved z"|<pixelsize. This is nowhere near optimal, but suffices to catch a lot of "offenders". If you have a better method, please let me know.
+
+2. Cardioid checking
+If you take a look a the Mandelbrot set, you will notice that most of it is made up of a number of discs that are attached to an object that looks like a sliced apple, which is called a cardioid (presumably because it looks a little like a heart, too). With a couple of operations we can check whether a given point lies inside one of those objects and exit if it does (at least for the main cardioid, and the 3 biggest discs attached to it). For example, if z=(r,i) satisfies (1/4)² <= (r+1)²+i², it lies inside the disc at (-1,0) with radius 1/4.
+Most of the cardioid checking code in AlmondBread was taken from a post by Todd S. Lehman (toddl@county.lmt.mn.org) on sci.fractals. Also, check out The Beauty of Fractals (p.56).
+
+The code can be found in optimized.h.
+
+Unroll
+
+Besides the optimizations mentioned in the previous paragraph, this method includes a technique that is geared toward reducing the number of instructions used to perform one iteration. The "normal" iteration loop looks something like this:
+
+do
+    {   
+      im=(im+im)*re+cim;
+      re=rq-iq+cre;
+      rq=re*re;
+      iq=im*im;
+      /* maybe some periodicity checking here */
+    }
+while (i++<=maxiter && rq+iq<bailout);
+
+As you can see, this process involves 3 floating point multiplies. We would be able to eliminate one of them if we didn't have to check for bailout on each iteration. And that's exactly what we do: We unroll the loop and check for the bound only every n-th time.
+
+do
+    {
+      /* do this n times */
+      i1 = (im+im)*re+cim;
+      r1 = (re+im)*(re-im)+cre;
+      
+      /* now check the bound once */
+      rq = rn*rn;
+      iq = in*in;
+      if(rq+iq>bailout)
+      {
+       /* determine correct iter and return */       
+      }
+      i+=n;
+    }
+while (i<maxiter);
+
+In addition to saving one multiplication (which in fact isn´t such a big savings on modern processors such as the Pentium) the comparison and looping overhead can be avoided. This turns out to be an even greater advantage, especially for Intel processors where floating point comparisons are very costly.
+There are a couple of problems, though. First of all, we are running the risk of doing too many iterations if we don't check the bound each time, but if maxiter is large compared to the number of unrolled iterations the time-savings outweigh the overhead. Secondly, the magnitude of z can get very large after it surpasses bailout, generating a floating-point exception. Therefore, AlmondBread unrolls only to a depth of eight, which seems to be safe for IEEE 754 doubles. Thirdly, it has to be determined when exactly the bailout value was exceeded in order to color the corresponding pixel correctly. Nick Haines (nickh@cmu.edu) suggested doing an "exponent correction hack", which uses the exponent of the magnitude of z to determine the correct iteration number. It is based on the observation that after |z| surpasses bailout, its exponent is doubled on each consecutive iteration. However, this works only for bailout values larger than 4.
+The code is in unroll.h.
+
+Coloring Schemes
+
+Selecting a coloring scheme is done either by selecting a radiobutton in the Coloring menu or setting the variable scheme to a value in the range of 0-2, where 0 corresponds to Normal and 2 represents Decomposition. Selecting the Options menu entry will pop up a window containing entries that control variables pertaining to the currently selected color scheme.
+
+Normal
+
+This coloring scheme will color a pixel according to the level of iteration where the magnitude of z got bigger than bailout (therefore sometimes termed Level Set Method).
+
+Potential
+
+This method yields smoother contours of the color bands than Normal at the cost of slower computation. The equipotential lines computed by this method are lines of equal escape time towards infinity (as are the bands computed by Normal, albeit on a much cruder basis). Consult The Beauty of Fractals and The Science of Fractal Images for mathematical details.
+The potential is computed as 
+	pot := maxcolor - slope * log( |z(n)| ) / 2^n
+maxcolor is the maximum value for pot, values <0 will be "truncated" to 1.
+slope affects the width of the color bands.
+z(n) is the value of z at the end of iteration, i.e. the value it holds when bailout is reached, after n iterations.
+The names of the variables are the same as in Fractint.
+
+Decomposition
+
+This method determines the color for pixel p on the basis of the angle of z(n) in polar coordinates, where z(n) is the value of z at the end of iteration. The normal representation of complex numbers is as a pair of real numbers (r,i) where r describes the real part and i the imaginary one. You can also describe a complex number completely by its radius (magnitude) and angle on a plane with real and imaginary axes. The arity parameter determines how many segments the circle of possible angle values is divided into, i.e. if arity is 2 p will be colored according to whether the imaginary part of z(n) is positive or negative. Again, try The Science of Fractal Images or The Beauty of Fractals for an in-depth explanation. arity 256 and a nicely shaded colormap gives beautiful pictures.
+
+The Zoombox
+
+Instead of using the interface entries to set the image coordinates you can also use the zoombox. To bring bring up the zoombox at any time just press button #2 in the image window. Dragging the mouse with button #1 pressed will resize the zoombox while moving the mouse with all buttons up will move the zoombox around. Double-clicking mouse button #1 or typing <Return> will perform a zoom-in whereas double-clicking button #3 or typing <Control-Return> will do a zoom-out. Zooming out means that the old image will be located at the position of the zoombox in the new image. A zoom will automatically trigger the GO button after coordinate recalculation is complete. Pressing button #2 with the zoombox up will get rid of it.
+
+Resizing
+
+A different way of manipulating coordinates is to resize the image interactively using the mouse. How this is done is up to your window manager, but it usually involves dragging out the corners of the window. This can be done with both the image window and the colormap window. The latter, however, is gridded, meaning you can change the size in either direction only in multiples of n (16 in this case, since the colormap has 256 entries). The bottom-left coordinates will not be affected by a resize, i.e. no matter which corner you drag out, it will always seem as if the top-right corner was dragged (in X terminology, this would be called south-west gravity, I think).
+
+Copyright
+
+Portions of the code contained in appinit.c and most of main.c is
+Copyright © 1990-1994 The Regents of the University of California.
+Copyright © 1994-1995 Sun Microsystems, Inc.
+
+Most of ppmtogif.c is
+Copyright © 1989 Jef Poskanzer.
+
+Most of giftoppm.c is
+Copyright © 1990 David Koblas.
+
+general.c contains routines from xfractint(1) and is therefore
+Copyright © 1991 Ken Shirriff.
+
+All code for AlmondBread  not covered by the above copyright exceptions is
+Copyright © 1994-1997 Michael R. Ganss. All Rights Reserved.
+
+Consequently, it is subject to the following copyright conditions:
+
+1. You may use, copy, modify, and distribute this software and its documentation for any non-commercial purpose free of charge.
+2. The above copyright notice and this conditions notice must appear in all (modified or unmodified) copies and supporting documentation.
+3. This software is provided "as is" without express or implied warranty.
+4. You may use, copy, modify, and distribute this software and its documentation for a commercial purpose (i.e. for a profit) if a royalty in the amount of $5 per copy sold or 5% of the total sale price per copy sold (whichever is more) is paid to Michael Ganss (rms@cs.tu-berlin.de).
+
+
+} {{{display:background:Red {3.0 3.12 20.0 20.10 72.0 72.18 121.0 121.13 138.0 138.17 164.0 164.15 213.0 213.17 271.0 271.16 293.0 293.11 301.0 301.9}} {display:foreground:Red {1.0 1.16}} {jdoc:anchor:anchorname {72.0 72.18 101.0 101.3 105.0 105.3 121.0 121.13 138.0 138.17 158.0 158.3 164.0 164.15 213.0 213.17 271.0 271.16 293.0 293.11 301.0 301.9}} {jdoc:xref:link {9.8 9.23 10.47 10.60 13.8 13.25 14.36 14.47 18.30 18.39 70.325 70.376 76.163 76.166 78.3 78.6 92.232 92.249 93.198 93.214 96.211 96.228 97.81 97.96 97.145 97.162 97.349 97.365 108.1 108.59 119.1 119.25 144.578 144.581 161.1 161.32 205.129 205.191 206.31 206.49 219.221 219.239 226.20 226.37}} {jdoc:xref:manpage {12.71 12.76 123.185 123.195 313.33 313.45}} {richtext:font:roman {1.16 3.0 3.12 5.0 5.11 5.94 6.0 6.41 6.49 6.159 6.165 6.238 6.249 8.51 8.79 9.0 9.3 10.12 10.20 11.7 11.15 11.38 11.42 12.71 12.76 13.2 13.3 16.0 16.11 20.0 22.0 22.1 22.7 22.45 22.52 23.12 23.20 23.29 23.33 23.52 23.58 24.8 24.9 28.0 28.8 29.0 29.1 29.20 29.28 29.56 30.0 31.0 31.13 32.10 32.11 32.48 32.49 33.17 33.18 33.46 33.47 33.54 34.0 35.0 35.8 35.9 35.16 38.0 38.9 38.10 38.18 40.24 40.32 40.52 40.63 43.0 43.5 43.6 43.10 44.5 44.9 44.55 44.56 45.29 45.33 47.0 47.5 52.0 52.7 52.8 53.0 53.55 53.61 54.28 54.40 56.1 56.5 58.0 60.1 60.54 60.58 62.4 62.9 62.40 62.52 64.37 64.39 64.54 64.59 66.92 66.100 66.287 66.298 68.13 68.24 68.55 68.66 68.129 68.134 68.179 68.190 68.217 68.221 68.250 68.255 70.13 70.24 70.81 70.88 70.172 70.177 70.223 70.228 70.301 70.308 72.0 72.18 76.24 76.25 78.7 78.8 82.0 82.13 84.44 84.45 92.164 92.171 92.209 92.216 93.80 93.81 93.118 93.129 93.143 93.150 93.175 93.182 93.244 93.245 94.43 94.44 94.148 94.159 94.179 94.180 94.215 94.221 94.515 94.523 95.71 95.75 95.77 95.82 95.88 95.94 95.290 95.294 95.296 95.300 95.354 95.358 95.360 95.364 95.397 95.401 95.403 95.407 95.452 95.456 95.458 95.462 95.480 95.483 95.488 95.494 96.89 96.90 96.146 96.153 96.180 96.181 96.188 96.195 97.23 97.34 97.296 97.299 99.0 99.10 102.1 102.30 106.1 106.21 107.19 107.31 107.33 107.45 113.1 113.23 114.30 115.0 121.0 123.0 123.185 123.195 125.0 125.14 127.29 127.33 127.158 127.163 128.17 128.20 128.39 128.47 128.121 128.129 128.205 128.216 128.245 128.252 128.254 128.260 128.373 128.376 128.486 128.488 130.0 130.13 132.28 132.32 132.90 132.98 132.149 132.160 132.192 132.200 132.333 132.344 134.0 134.4 136.63 136.74 137.0 140.12 142.38 142.49 142.148 142.159 142.613 142.624 142.710 142.721 143.130 143.150 144.62 144.73 144.283 144.294 144.503 144.514 144.567 144.569 144.659 144.678 145.33 145.44 147.0 147.13 149.83 149.94 149.142 149.149 149.429 149.430 151.0 151.18 153.107 153.116 153.117 153.121 153.268 153.304 156.0 156.10 159.1 159.10 160.19 161.1 162.0 163.0 164.0 164.15 166.150 166.156 167.8 167.12 167.31 167.34 167.35 167.36 167.50 167.57 169.0 169.4 171.54 171.55 171.494 171.500 173.0 173.10 175.48 175.52 175.587 175.597 175.605 175.612 176.199 176.207 176.210 176.224 176.266 176.271 176.308 176.320 178.0 178.8 180.31 180.39 180.105 180.115 184.269 184.277 184.285 184.292 186.64 186.75 186.318 186.329 187.22 187.30 187.85 187.95 189.0 189.16 191.4 191.20 191.59 191.67 200.38 200.50 201.22 201.38 201.77 201.87 203.0 203.3 205.15 205.44 205.109 205.127 205.302 205.320 205.375 205.387 206.63 206.64 207.122 207.133 207.191 207.211 207.481 207.489 207.611 207.618 208.0 208.3 208.161 208.171 208.246 208.256 208.271 208.274 208.311 208.312 208.360 208.363 208.588 208.599 208.606 208.617 208.738 208.748 208.770 209.0 209.50 209.53 209.57 209.68 209.232 209.241 209.465 209.468 209.512 209.515 210.18 210.21 211.13 211.16 211.33 211.38 211.39 212.0 213.0 213.17 215.96 215.103 215.134 215.146 215.154 215.160 215.162 215.163 215.177 215.184 215.240 215.247 215.252 215.259 217.0 217.12 219.266 219.280 221.0 221.9 223.111 223.112 226.58 226.59 226.110 226.117 226.459 226.470 226.489 226.496 230.38 230.49 230.119 230.131 230.149 230.171 232.25 232.36 234.0 234.6 238.0 247.0 248.140 248.147 250.0 267.0 268.153 268.160 268.382 268.393 268.523 268.530 268.823 268.830 268.916 268.923 269.15 269.23 271.0 273.0 273.77 273.85 273.115 273.121 273.177 273.183 273.201 273.214 273.215 273.216 273.230 273.237 275.0 275.6 277.117 277.124 277.153 277.169 279.0 279.9 281.61 281.67 281.229 281.235 281.277 281.299 281.304 281.333 283.1 283.46 284.0 284.8 285.0 285.5 286.77 286.84 287.46 287.54 289.0 289.13 291.423 291.428 291.529 291.534 291.642 291.671 291.675 291.697 291.727 291.732 292.0 295.0 295.363 295.371 295.439 295.455 295.616 295.618 297.0 297.8 300.0 303.0 303.34 303.43 303.56 303.62 307.8 307.18 310.8 310.18 313.0 313.9 313.33 313.45 316.13 316.24 317.16 317.17 325.0}} {richtext:font:italic {22.45 22.52 23.12 23.20 23.29 23.33 23.52 23.58 35.9 35.16 38.10 38.18 43.6 43.10 44.5 44.9 52.8 52.14 53.55 53.61 58.0 59.0 76.24 76.25 78.7 78.8 84.44 84.45 93.80 93.81 93.244 93.245 94.43 94.44 94.179 94.180 96.89 96.90 102.1 102.30 106.1 106.21 113.1 113.23 114.30 115.0 121.13 123.0 159.1 159.10 160.19 161.1 171.54 171.55 206.63 206.64 223.111 223.112 226.58 226.59 230.149 230.171 281.277 281.299 281.304 281.333 291.642 291.671 291.675 291.697}} {richtext:font:bold {5.94 6.0 6.41 6.49 6.159 6.165 8.51 8.79 9.0 9.3 10.12 10.20 11.7 11.15 13.2 13.3 22.1 22.7 28.0 28.8 29.0 29.1 29.20 29.28 29.56 30.0 31.0 31.13 32.10 32.11 32.48 32.49 33.17 33.18 33.46 33.47 33.54 34.0 35.0 35.8 38.0 38.9 40.24 40.32 43.0 43.5 44.55 44.56 45.29 45.33 47.0 47.5 52.0 52.7 52.14 53.0 56.1 56.5 59.0 60.1 60.54 60.58 62.4 62.9 64.37 64.39 64.54 64.59 66.92 66.100 68.129 68.134 70.81 70.88 70.223 70.228 70.301 70.308 92.164 92.171 92.209 92.216 93.143 93.150 93.175 93.182 94.215 94.221 94.515 94.523 95.71 95.75 95.77 95.82 95.88 95.94 95.290 95.294 95.296 95.300 95.354 95.358 95.360 95.364 95.397 95.401 95.403 95.407 95.452 95.456 95.458 95.462 95.480 95.483 95.488 95.494 96.146 96.153 96.180 96.181 96.188 96.195 97.296 97.299 127.29 127.33 127.158 127.163 128.17 128.20 128.39 128.47 128.121 128.129 128.245 128.252 128.254 128.260 128.373 128.376 128.486 128.488 132.28 132.32 132.90 132.98 132.192 132.200 144.567 144.569 144.659 144.678 153.107 153.116 162.0 163.0 166.150 166.156 167.8 167.12 167.31 167.34 167.35 167.36 167.50 167.57 175.48 175.52 175.587 175.597 175.605 175.612 176.199 176.207 176.210 176.224 180.31 180.39 180.105 180.115 184.269 184.277 184.285 184.292 187.22 187.30 191.4 191.20 191.59 191.67 201.22 201.38 205.15 205.44 205.109 205.127 205.302 205.320 207.191 207.211 207.481 207.489 207.611 207.618 208.0 208.3 208.161 208.171 208.246 208.256 208.271 208.274 208.311 208.312 208.360 208.363 208.606 208.617 208.738 208.748 208.770 209.0 209.50 209.53 209.232 209.241 209.465 209.468 209.512 209.515 210.18 210.21 211.13 211.16 215.96 215.103 215.134 215.146 215.154 215.160 215.162 215.163 215.177 215.184 215.240 215.247 215.252 215.259 226.110 226.117 226.489 226.496 248.140 248.147 268.153 268.160 268.523 268.530 268.823 268.830 268.916 268.923 273.77 273.85 273.115 273.121 273.177 273.183 273.201 273.214 273.215 273.216 273.230 273.237 277.117 277.124 277.153 277.169 281.61 281.67 281.229 281.235 284.0 284.8 285.0 285.5 286.77 286.84 287.46 287.54 291.423 291.428 291.529 291.534 291.727 291.732 292.0 293.0 293.11 295.0 295.363 295.371 295.439 295.455 295.616 295.618}} {richtext:font:bolditalic {5.0 5.11 6.238 6.249 16.0 16.11 20.10 22.0 40.52 40.63 62.40 62.52 66.287 66.298 68.13 68.24 68.179 68.190 70.13 70.24 93.118 93.129 94.148 94.159 97.23 97.34 128.205 128.216 132.149 132.160 132.333 132.344 136.63 136.74 137.0 138.0 138.17 140.0 142.38 142.49 142.148 142.159 142.613 142.624 142.710 142.721 144.62 144.73 144.283 144.294 144.503 144.514 145.33 145.44 149.83 149.94 186.64 186.75 186.318 186.329 207.122 207.133 208.588 208.599 209.57 209.68 226.459 226.470 230.38 230.49 268.382 268.393 316.13 316.24 317.16 317.17}} {richtext:font:typewriter {11.38 11.42 12.71 12.76 24.8 24.9 54.28 54.40 68.55 68.66 68.217 68.221 68.250 68.255 70.172 70.177 107.19 107.31 107.33 107.45 123.185 123.195 143.130 143.150 153.117 153.121 153.268 153.304 171.494 171.500 176.266 176.271 176.308 176.320 187.85 187.95 200.38 200.50 201.77 201.87 205.375 205.387 211.33 211.38 219.266 219.280 230.119 230.131 232.25 232.36 238.0 247.0 250.0 267.0 269.15 269.23 283.1 283.46 303.34 303.43 303.56 303.62 307.8 307.18 310.8 310.18 313.0 313.9 313.33 313.45}} {richtext:font:heading0 {1.0 1.16}} {richtext:font:heading1 {3.0 3.12 20.0 20.10 72.0 72.18 121.0 121.13 138.0 138.17 164.0 164.15 213.0 213.17 271.0 271.16 293.0 293.11 301.0 301.9}} {richtext:font:heading2 {82.0 82.13 99.0 99.10 125.0 125.14 130.0 130.13 134.0 134.4 140.0 140.12 147.0 147.13 151.0 151.18 156.0 156.10 169.0 169.4 173.0 173.10 178.0 178.8 189.0 189.16 203.0 203.3 217.0 217.12 221.0 221.9 234.0 234.6 275.0 275.6 279.0 279.9 289.0 289.13 297.0 297.8 300.0 301.0 301.9 303.0}} {jdoc:manpage:xv {12.71 12.76}} {jdoc:anchorname:Drawing_Methods {164.0 164.15}} {jdoc:link:#Drawing_Methods {9.8 9.23 97.81 97.96}} {jdoc:link:#Iteration_Methods {92.232 92.249 96.211 96.228 97.145 97.162}} {jdoc:link:#Coloring_Schemes {93.198 93.214 97.349 97.365}} {jdoc:manpage:xmodmap {123.185 123.195}} {jdoc:link:ftp://ftp.cis.upenn.edu/pub/xv/ {161.1 161.32}} {jdoc:anchorname:The_Mandelbrot_Set {72.0 72.18}} {jdoc:link:#The_Mandelbrot_Set {206.31 206.49 219.221 219.239}} {jdoc:anchorname:Iteration_Methods {213.0 213.17}} {jdoc:link:#The_Mandelbrot_Se {226.20 226.37}} {jdoc:anchorname:Coloring_Schemes {271.0 271.16}} {jdoc:manpage:xfractint {313.33 313.45}} {jdoc:link:#The_File_Menu {10.47 10.60}} {jdoc:link:#The_Colormap_Menu {13.8 13.25}} {jdoc:link:#The_Zoombox {14.36 14.47}} {jdoc:link:#Copyright {18.30 18.39}} {jdoc:anchorname:The_File_Menu {121.0 121.13}} {jdoc:anchorname:The_Colormap_Menu {138.0 138.17}} {jdoc:anchorname:The_Zoombox {293.0 293.11}} {jdoc:anchorname:Copyright {301.0 301.9}} {jdoc:anchorname:Peitgen {101.0 101.3}} {jdoc:anchorname:Shirriff {105.0 105.3}} {jdoc:link:#Peitgen {76.163 76.166}} {jdoc:link:#Shirriff {78.3 78.6}} {jdoc:anchorname:Bradley {158.0 158.3}} {jdoc:link:#Bradley {144.578 144.581}} {jdoc:link:http://spanky.triumf.ca/ {119.1 119.25}} {jdoc:link:http://www.cs.uoregon.edu/docs/jstools/jstools.html {70.325 70.376}} {jdoc:link:http://spanky.triumf.ca/pub/fractals/docs/SCI_FRACTALS.FAQ {108.1 108.59}} {jdoc:link:http://spanky.triumf.ca/pub/fractals/programs/IBMPC/FW1-08.ZIP {205.129 205.191}}} {{convert:place:305.0 325.0} {convert:place:196.134 215.134} {convert:place:94.515 94.515} {convert:place:78.3 78.3} {convert:place:179.269 184.269} {convert:place:99.0 99.0} {convert:place:290.18 310.18} {convert:place:283.43 303.43} {convert:place:275.455 295.455} {convert:place:228.0 247.0} {convert:place:78.6 78.6} {convert:place:78.7 78.7} {convert:place:78.8 78.8} {convert:place:94.523 94.523} {convert:place:192.13 211.13} {convert:place:96.90 96.90} {convert:place:96.89 96.89} {convert:place:8.79 8.79} {convert:place:179.277 184.277} {convert:place:196.146 215.146} {convert:place:192.16 211.16} {convert:place:173.0 178.0} {current 195.12} {convert:place:94.215 94.215} {convert:place:257.169 277.169} {convert:place:194.0 213.0} {convert:place:29.56 29.56} {convert:place:283.56 303.56} {convert:place:179.285 184.285} {convert:place:127.149 132.149} {convert:place:106.1 106.1} {convert:place:43.10 43.10} {convert:place:196.154 215.154} {convert:place:44.55 44.55} {convert:place:94.221 94.221} {convert:place:173.8 178.8} {convert:place:29.0 29.0} {convert:place:30.0 30.0} {convert:place:44.56 44.56} {convert:place:171.308 176.308} {convert:place:29.1 29.1} {convert:place:296.13 316.13} {convert:place:283.62 303.62} {convert:place:155.19 160.19} {convert:place:139.503 144.503} {convert:place:271.642 291.642} {convert:place:179.292 184.292} {convert:place:196.160 215.160} {convert:place:196.162 215.162} {convert:place:188.611 207.611} {convert:place:186.370 205.375} {convert:place:127.160 132.160} {convert:place:22.50 22.45} {convert:place:70.172 70.172} {convert:place:72.0 72.0} {convert:place:196.163 215.163} {convert:place:192.33 211.33} {convert:place:96.146 96.146} {convert:place:198.12 217.12} {convert:place:5.0 5.0} {convert:place:14.36 14.36} {convert:place:261.229 281.229} {convert:place:171.320 176.320} {convert:place:70.177 70.177} {convert:place:93.118 93.118} {convert:place:95.71 95.71} {convert:place:133.17 138.17} {convert:place:296.24 316.24} {convert:place:192.38 211.38} {convert:place:139.514 144.514} {convert:place:261.61 281.61} {convert:place:248.523 268.523} {convert:place:192.39 211.39} {convert:place:188.618 207.618} {convert:place:96.153 96.153} {convert:place:22.57 22.52} {convert:place:72.18 72.18} {convert:place:95.75 95.75} {convert:place:95.354 95.354} {convert:place:261.235 281.235} {convert:place:127.90 132.90} {convert:place:47.0 47.0} {convert:place:264.0 284.0} {convert:place:189.738 208.738} {convert:place:186.382 205.387} {convert:place:162.12 167.12} {convert:place:95.77 95.77} {convert:place:261.67 281.67} {convert:place:248.530 268.530} {convert:place:95.358 95.358} {convert:place:196.177 215.177} {convert:place:35.16 35.16} {convert:place:66.92 66.92} {convert:place:95.360 95.360} {convert:place:14.47 14.47} {convert:place:118.185 123.185} {convert:place:47.5 47.5} {convert:place:93.129 93.129} {convert:place:95.82 95.82} {convert:place:267.46 287.46} {convert:place:166.500 171.500} {convert:place:127.98 132.98} {convert:place:95.364 95.364} {convert:place:264.8 284.8} {convert:place:125.13 130.13} {convert:place:94.43 94.43} {convert:place:196.184 215.184} {convert:place:189.748 208.748} {convert:place:137.613 142.613} {convert:place:94.44 94.44} {convert:place:166.494 171.494} {convert:place:95.88 95.88} {convert:place:142.0 147.0} {convert:place:271.671 291.671} {convert:place:267.54 287.54} {convert:place:118.195 123.195} {convert:place:154.10 159.10} {convert:place:6.41 6.41} {convert:place:95.94 95.94} {convert:place:271.675 291.675} {convert:place:191.18 210.18} {convert:place:170.48 175.48} {convert:place:127.200 132.200} {convert:place:93.143 93.143} {convert:place:184.0 203.0} {convert:place:162.31 167.31} {convert:place:6.159 6.159} {convert:place:44.5 44.5} {convert:place:191.21 210.21} {convert:place:127.192 132.192} {convert:place:170.52 175.52} {convert:place:137.624 142.624} {convert:place:215.0 234.0} {convert:place:184.3 203.3} {convert:place:168.10 173.10} {convert:place:162.34 167.34} {convert:place:96.180 96.180} {convert:place:162.35 167.35} {convert:place:97.296 97.296} {convert:place:96.181 96.181} {convert:place:44.9 44.9} {convert:place:229.140 248.140} {convert:place:162.36 167.36} {convert:place:20.0 20.0} {convert:place:6.165 6.165} {convert:place:93.150 93.150} {convert:place:13.25 13.25} {convert:place:6.49 6.49} {convert:place:97.299 97.299} {convert:place:215.6 234.6} {convert:place:70.223 70.223} {convert:place:159.0 164.0} {convert:place:5.11 5.11} {convert:place:253.77 273.77} {convert:place:189.770 208.770} {convert:place:96.188 96.188} {convert:place:229.147 248.147} {convert:place:186.109 205.109} {convert:place:20.10 20.10} {convert:place:140.33 145.33} {convert:place:123.373 128.373} {convert:place:70.228 70.228} {convert:place:95.401 95.401} {convert:place:62.4 62.4} {convert:place:64.37 64.37} {convert:place:95.403 95.403} {convert:place:273.11 293.11} {convert:place:162.50 167.50} {convert:place:123.376 128.376} {convert:place:96.195 96.195} {convert:place:64.39 64.39} {convert:place:253.85 273.85} {convert:place:16.0 16.0} {convert:place:271.697 291.697} {convert:place:138.130 143.130} {convert:place:135.0 140.0} {convert:place:261.277 281.277} {convert:place:190.465 209.465} {convert:place:62.9 62.9} {convert:place:95.397 95.397} {convert:place:95.407 95.407} {convert:place:207.20 226.20} {convert:place:96.211 96.211} {convert:place:99.10 99.10} {convert:place:190.468 209.468} {convert:place:146.18 151.18} {convert:place:162.57 167.57} {convert:place:156.1 161.1} {convert:place:140.44 145.44} {convert:place:58.0 58.0} {convert:place:275.0 295.0} {convert:place:139.567 144.567} {convert:place:306.0 326.0} {convert:place:186.127 205.127} {convert:place:139.569 144.569} {convert:place:93.175 93.175} {convert:place:287.18 307.18} {convert:place:198.0 217.0} {convert:place:189.161 208.161} {convert:place:68.129 68.129} {convert:place:64.54 64.54} {convert:place:196.240 215.240} {convert:place:132.0 137.0} {convert:place:13.2 13.2} {convert:place:68.134 68.134} {convert:place:251.16 271.16} {convert:place:13.3 13.3} {convert:place:34.0 34.0} {convert:place:93.182 93.182} {convert:place:261.304 281.304} {convert:place:251.0 271.0} {convert:place:64.59 64.59} {convert:place:139.578 144.578} {convert:place:253.115 273.115} {convert:place:271.727 291.727} {convert:place:138.150 143.150} {convert:place:139.581 144.581} {convert:place:207.37 226.37} {convert:place:186.138 205.191} {convert:place:96.228 96.228} {convert:place:272.0 292.0} {convert:place:189.171 208.171} {convert:place:13.8 13.8} {convert:place:170.587 175.587} {convert:place:261.299 281.299} {convert:place:196.247 215.247} {convert:place:139.62 144.62} {convert:place:293.0 313.0} {convert:place:271.732 291.732} {convert:place:253.121 273.121} {convert:place:97.349 97.349} {convert:place:144.430 149.430} {convert:place:144.429 149.429} {convert:place:196.252 215.252} {convert:place:175.31 180.31} {convert:place:9.0 9.0} {convert:place:271.423 291.423} {convert:place:170.605 175.605} {anchor 205.67} {convert:place:116.13 121.13} {convert:place:9.3 9.3} {convert:place:31.0 31.0} {convert:place:247.0 267.304} {convert:place:170.597 175.597} {convert:place:148.268 153.268} {insert 194.217} {convert:place:93.198 93.198} {convert:place:293.9 313.9} {convert:place:139.73 144.73} {convert:place:52.0 52.0} {convert:place:271.428 291.428} {convert:place:196.259 215.259} {convert:place:9.8 9.8} {convert:place:175.39 180.39} {convert:place:170.612 175.612} {convert:place:190.512 209.512} {convert:place:139.283 144.283} {convert:place:93.214 93.214} {convert:place:70.13 70.13} {convert:place:266.77 286.77} {convert:place:202.0 221.0} {convert:place:190.515 209.515} {convert:place:97.365 97.365} {convert:place:207.58 226.58} {convert:place:102.30 102.30} {convert:place:6.0 6.0} {convert:place:52.7 52.7} {convert:place:207.59 226.59} {convert:place:182.22 187.22} {convert:place:52.8 52.8} {convert:place:125.0 130.0} {convert:place:95.452 95.452} {convert:place:266.84 286.84} {convert:place:261.333 281.333} {convert:place:123.121 128.121} {convert:place:290.8 310.8} {convert:place:146.0 151.0} {convert:place:6.238 6.238} {convert:place:139.294 144.294} {convert:place:93.80 93.80} {convert:place:186.167 205.191} {convert:place:265.0 285.0} {convert:place:202.9 221.9} {convert:place:159.15 164.15} {convert:place:70.24 70.24} {convert:place:93.81 93.81} {convert:place:95.456 95.456} {convert:place:182.30 187.30} {convert:place:33.17 33.17} {convert:place:211.119 230.119} {convert:place:190.50 209.50} {convert:place:33.18 33.18} {convert:place:95.458 95.458} {convert:place:144.142 149.142} {convert:place:265.5 285.5} {convert:place:190.53 209.53} {convert:place:123.129 128.129} {convert:place:95.462 95.462} {convert:place:137.710 142.710} {convert:place:3.0 3.0} {convert:place:70.301 70.301} {convert:place:18.30 18.30} {convert:place:219.0 238.0} {convert:place:148.304 153.304} {convert:place:249.15 269.15} {convert:place:6.249 6.249} {convert:place:190.57 209.57} {convert:place:123.17 128.17} {convert:place:200.221 219.221} {convert:place:186.178 205.191} {convert:place:144.149 149.149} {convert:place:68.179 68.179} {convert:place:123.20 128.20} {convert:place:11.15 11.15} {convert:place:211.131 230.131} {convert:place:70.308 70.308} {convert:place:275.616 295.616} {convert:place:164.0 169.0} {convert:place:249.23 269.23} {convert:place:18.39 18.39} {convert:place:283.0 303.0} {convert:place:275.618 295.618} {convert:place:186.185 205.191} {convert:place:137.721 142.721} {convert:place:24.8 24.8} {convert:place:93.244 93.244} {convert:place:164.4 169.4} {convert:place:24.9 24.9} {convert:place:93.245 93.245} {convert:place:190.68 209.68} {convert:place:68.190 68.190} {convert:place:190.232 209.232} {convert:place:118.0 123.0} {convert:place:95.480 95.480} {convert:place:5.94 5.94} {convert:place:207.110 226.110} {convert:place:12.71 12.71} {convert:place:76.24 76.24} {convert:place:76.25 76.25} {convert:place:84.44 84.44} {convert:place:213.25 232.25} {convert:place:95.483 95.483} {convert:place:84.45 84.45} {convert:place:188.122 207.122} {convert:place:3.12 3.12} {convert:place:200.239 219.239} {convert:place:12.76 12.76} {convert:place:33.46 33.46} {convert:place:70.325 70.376} {convert:place:253.177 273.177} {convert:place:190.241 209.241} {convert:place:33.47 33.47} {convert:place:280.0 300.0} {convert:place:211.149 230.149} {convert:place:207.117 226.117} {convert:place:123.39 128.39} {convert:place:95.488 95.488} {convert:place:40.24 40.24} {convert:place:68.13 68.13} {convert:place:62.40 62.40} {convert:place:11.38 11.38} {convert:place:66.287 66.287} {convert:place:253.183 273.183} {convert:place:189.246 208.246} {convert:place:137.38 142.38} {convert:place:131.63 136.63} {convert:place:32.10 32.10} {convert:place:108.51 108.59} {convert:place:213.36 232.36} {convert:place:115.0 120.0} {convert:place:95.494 95.494} {convert:place:32.11 32.11} {convert:place:33.54 33.54} {convert:place:188.133 207.133} {convert:place:11.42 11.42} {convert:place:68.217 68.217} {convert:place:139.659 144.659} {convert:place:123.47 128.47} {convert:place:40.32 40.32} {convert:place:38.0 38.0} {convert:place:54.28 54.28} {convert:place:68.221 68.221} {convert:place:293.33 313.33} {convert:place:255.0 275.0} {convert:place:68.24 68.24} {convert:place:253.201 273.201} {convert:place:157.0 162.0} {convert:place:59.0 59.0} {convert:place:189.256 208.256} {convert:place:60.1 60.1} {convert:place:62.52 62.52} {convert:place:66.298 66.298} {convert:place:137.49 142.49} {convert:place:131.74 136.74} {convert:place:123.486 128.486} {convert:place:255.6 275.6} {convert:place:123.488 128.488} {convert:place:107.19 107.19} {convert:place:127.333 132.333} {convert:place:10.12 10.12} {convert:place:38.9 38.9} {convert:place:211.171 230.171} {convert:place:97.23 97.23} {convert:place:54.40 54.40} {convert:place:231.0 250.0} {convert:place:92.164 92.164} {convert:place:133.0 138.0} {convert:place:293.45 313.45} {convert:place:200.266 219.266} {convert:place:182.85 187.85} {convert:place:151.10 156.10} {convert:place:35.0 35.0} {convert:place:70.81 70.81} {convert:place:253.214 273.214} {convert:place:204.111 223.111} {convert:place:253.215 273.215} {convert:place:204.112 223.112} {convert:place:139.678 144.678} {convert:place:253.216 273.216} {convert:place:207.459 226.459} {convert:place:154.1 159.1} {convert:place:10.20 10.20} {convert:place:273.0 293.0} {convert:place:189.271 208.271} {convert:place:107.31 107.31} {convert:place:38.10 38.10} {convert:place:56.1 56.1} {convert:place:92.171 92.171} {convert:place:127.344 132.344} {convert:place:9.23 9.23} {convert:place:166.54 171.54} {convert:place:107.33 107.33} {convert:place:189.588 208.588} {convert:place:189.274 208.274} {convert:place:166.55 171.55} {convert:place:97.34 97.34} {convert:place:70.88 70.88} {convert:place:122.29 127.29} {convert:place:35.8 35.8} {convert:place:56.5 56.5} {convert:place:70.361 70.376} {convert:place:182.95 187.95} {convert:place:35.9 35.9} {convert:place:108.1 108.59} {convert:place:248.382 268.382} {convert:place:122.33 127.33} {convert:place:187.31 206.31} {convert:place:207.470 226.470} {convert:place:200.280 219.280} {convert:place:129.0 134.0} {convert:place:38.18 38.18} {convert:place:123.205 128.205} {convert:place:68.250 68.250} {convert:place:189.606 208.606} {convert:place:188.481 207.481} {convert:place:253.230 273.230} {convert:place:196.96 215.96} {convert:place:151.0 156.0} {convert:place:137.148 142.148} {convert:place:129.4 134.4} {convert:place:53.0 53.0} {convert:place:68.55 68.55} {convert:place:269.0 289.0} {convert:place:189.599 208.599} {convert:place:107.45 107.45} {convert:place:16.11 16.11} {convert:place:11.7 11.7} {convert:place:32.48 32.48} {convert:place:97.145 97.145} {convert:place:275.363 295.363} {convert:place:271.529 291.529} {convert:place:32.49 32.49} {convert:place:68.255 68.255} {convert:place:181.64 186.64} {convert:place:269.13 289.13} {convert:place:248.393 268.393} {convert:place:193.0 212.0} {convert:place:271.534 291.534} {convert:place:253.237 273.237} {convert:place:194.17 213.17} {convert:place:188.489 207.489} {convert:place:82.13 82.13} {convert:place:123.216 128.216} {convert:place:189.617 208.617} {convert:place:31.13 31.13} {convert:place:275.371 295.371} {convert:place:114.30 114.30} {convert:place:171.207 176.207} {convert:place:137.159 142.159} {convert:place:28.0 28.0} {convert:place:68.66 68.66} {convert:place:10.47 10.47} {convert:place:171.210 176.210} {convert:place:171.199 176.199} {convert:place:187.49 206.49} {convert:place:263.46 283.46} {convert:place:207.489 226.489} {convert:place:181.318 186.318} {convert:place:181.75 186.75} {convert:place:92.209 92.209} {convert:place:189.311 208.311} {convert:place:168.0 173.0} {convert:place:189.312 208.312} {convert:place:97.162 97.162} {convert:place:190.0 209.0} {convert:place:189.0 208.0} {convert:place:106.21 106.21} {convert:place:28.8 28.8} {convert:place:207.496 226.496} {convert:place:188.191 207.191} {convert:place:135.12 140.12} {convert:place:102.1 102.1} {convert:place:92.216 92.216} {convert:place:189.3 208.3} {convert:place:186.15 205.15} {convert:place:10.60 10.60} {convert:place:181.329 186.329} {convert:place:23.12 23.12} {convert:place:287.8 307.8} {convert:place:187.63 206.63} {convert:place:171.224 176.224} {convert:place:187.64 206.64} {convert:place:263.1 283.1} {convert:place:144.83 149.83} {convert:place:45.29 45.29} {convert:place:188.211 207.211} {convert:place:76.163 76.163} {convert:place:23.20 23.20} {convert:place:45.33 45.33} {convert:place:97.81 97.81} {convert:place:1.0 1.0} {convert:place:123.245 128.245} {convert:place:76.166 76.166} {convert:place:92.232 92.232} {convert:place:53.55 53.55} {convert:place:94.148 94.148} {convert:place:120.0 125.0} {convert:place:1.11 1.16} {convert:place:52.14 52.14} {convert:place:22.0 22.0} {convert:place:148.107 153.107} {convert:place:22.1 22.7} {convert:place:144.94 149.94} {convert:place:257.117 277.117} {convert:place:123.252 128.252} {convert:place:43.0 43.0} {convert:place:53.61 53.61} {convert:place:259.0 279.0} {convert:place:23.29 23.29} {convert:place:186.297 205.302} {convert:place:123.254 128.254} {convert:place:248.758 268.945} {convert:place:113.23 113.23} {convert:place:281.0 301.0} {convert:place:142.13 147.13} {convert:place:23.33 23.33} {convert:place:196.103 215.103} {convert:place:43.5 43.5} {convert:place:94.159 94.159} {convert:place:257.124 277.124} {convert:place:148.116 153.116} {convert:place:43.6 43.6} {convert:place:148.117 153.117} {convert:place:123.260 128.260} {convert:place:97.96 97.96} {convert:place:211.38 230.38} {convert:place:186.44 205.44} {convert:place:186.315 205.320} {convert:place:116.0 121.0} {convert:place:259.9 279.9} {convert:place:162.8 167.8} {convert:place:148.121 153.121} {convert:place:92.249 92.249} {convert:place:281.9 301.9} {convert:place:248.769 268.945} {convert:place:127.28 132.28} {convert:place:29.20 29.20} {convert:place:161.150 166.150} {convert:place:158.0 163.0} {convert:place:8.51 8.51} {convert:place:127.32 132.32} {convert:place:60.54 60.54} {convert:place:277.0 297.0} {convert:place:120.14 125.14} {convert:place:297.16 317.16} {convert:place:211.49 230.49} {convert:place:95.290 95.290} {convert:place:95.300 95.300} {convert:place:297.17 317.21} {convert:place:82.0 82.0} {convert:place:189.360 208.360} {convert:place:175.105 180.105} {convert:place:122.158 127.158} {convert:place:60.58 60.58} {convert:place:161.156 166.156} {convert:place:23.52 23.52} {convert:place:29.28 29.28} {convert:place:66.100 66.100} {convert:place:95.294 95.294} {convert:place:275.439 295.439} {convert:place:189.363 208.363} {convert:place:113.1 113.1} {convert:place:94.179 94.179} {convert:place:94.180 94.180} {convert:place:248.153 268.153} {convert:place:171.266 176.266} {convert:place:122.163 127.163} {convert:place:22.12 22.7} {convert:place:95.296 95.296} {convert:place:277.8 297.8} {convert:place:156.32 161.32} {convert:place:253.0 273.0} {convert:place:23.58 23.58} {convert:place:171.271 176.271} {convert:place:283.34 303.34} {convert:place:175.115 180.115} {convert:place:248.160 268.160} {convert:place:257.153 277.153}}} {}

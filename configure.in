@@ -1,0 +1,225 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(appinit.c)
+AC_CONFIG_HEADER(conf.h)
+
+dnl Checks for programs.
+AC_PROG_CC
+CFLAGS=-O
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(limits.h)
+AC_PATH_X
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_C_BIGENDIAN
+
+dnl Checks for library functions.
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(strncmp memcpy strerror strdup isatty)
+
+AC_SUBST(x_includes)
+AC_SUBST(x_libraries)
+
+dnl Checks for Tcl/Tk files.
+dnl Adapted from the extension command by george.howlett@att.com.
+echo $ac_n "checking for tcl.h... "
+tclinclude=""
+places="/usr/include \
+    $prefix/include \
+    /usr/local/include \
+    /usr/tcl/include \
+    /usr/local/tcl/include/ \
+    /include \
+    /client/include \
+    $HOME/include"
+for dir in $places; do
+    if test -r $dir/tcl.h ; then
+        tclinclude=$dir
+        break
+    fi
+done
+if test -z "$tclinclude" ; then
+    echo "no"
+    while test -z "$tclinclude" ; do
+    	echo $ac_n "Which directory contains tcl.h (absolute path)? "
+	read tclinclude
+    done
+else
+    echo "$tclinclude/tcl.h"
+fi
+AC_SUBST(tclinclude)
+
+echo $ac_n "checking for libtcl.a... "
+tcllib=""
+places="/usr/lib \
+    $prefix/lib \
+    /usr/local/lib \
+    /usr/tcl/lib \
+    /usr/local/tcl/lib/ \
+    /lib \
+    /client/lib/ \
+    $HOME/lib"
+for dir in $places; do
+    if find $dir -maxdepth 0 -type f -name "libtcl.*" ; then
+        tcllib=$dir
+        break
+    fi
+done
+if test -z "$tcllib" ; then
+    echo "no"
+    while test -z "$tcllib" ; do
+    	echo $ac_n "Which directory contains libtcl.a (absolute path)? "
+	read tcllib
+    done
+else
+    echo "$tcllib/libtcl.a"
+fi
+AC_SUBST(tcllib)
+
+echo $ac_n "checking for tk.h... "
+tkinclude=""
+places="$tclinclude \
+    /usr/include \
+    $prefix/include \
+    /usr/local/include \
+    /usr/tk/include \
+    /usr/local/tk/include/ \
+    /include \
+    /client/include/ \
+    $HOME/include"
+for dir in $places; do
+    if test -r $dir/tk.h ; then
+        tkinclude=$dir
+        break
+    fi
+done
+if test -z "$tkinclude" ; then
+    echo "no"
+    while test -z "$tkinclude" ; do
+    	echo $ac_n "Which directory contains tk.h (absolute path)? "
+	read tkinclude
+    done
+else
+    echo "$tkinclude/tk.h"
+fi
+AC_SUBST(tkinclude)
+
+echo $ac_n "checking for libtk.a... "
+tklib=""
+places="$tcllib \
+    /usr/lib \
+    $prefix/lib \
+    /usr/local/lib \
+    /usr/tk/lib \
+    /usr/local/tk/lib/ \
+    /lib \
+    /client/lib/ \
+    $HOME/lib"
+for dir in $places; do
+    if find $dir -maxdepth 0 -type f -name "libtk.*" ; then
+        tklib=$dir
+        break
+    fi
+done
+if test -z "$tklib" ; then
+    echo "no"
+    while test -z "$tklib" ; do
+    	echo $ac_n "Which directory contains libtk.a (absolute path)? "
+	read tklib
+    done
+else
+    echo "$tklib/libtk.a"
+fi
+AC_SUBST(tklib)
+
+echo $ac_n "checking for jstools... "
+jstools=""
+places="/usr/lib \
+    $prefix/lib \
+    /usr/local/lib \
+    /usr/tk/lib \
+    /usr/local/tk/lib/ \
+    /lib \
+    /client/lib/ \
+    /usr/local/lib/jstools/ \
+    /usr/lib/jstools/ \
+    /usr/lib/tk/jstools/ \
+    /usr/lib/tcl/jstools/ \
+    /usr/local/lib/tk/jstools/ \
+    /usr/local/lib/tcl/jstools/ \
+    $HOME/.tk/ \
+    $HOME/lib"
+for dir in $places; do
+    if test -r $dir/jstools.tcl ; then
+        jstools=$dir
+        break
+    fi
+done
+if test -z "$jstools" ; then
+    echo "no"
+    while test -z "$jstools" ; do
+    	echo $ac_n "Which directory contains the jstools libraries (absolute path)? "
+	read jstools
+    done
+else
+    echo "$jstools"
+fi
+AC_SUBST(jstools)
+
+echo $ac_n "checking for jdoc... "
+jdoc=""
+places="/usr/bin \
+	/usr/local/bin \
+	/usr/local/jstools-4.0b/bin \
+	/usr/local/jstools-4.0b/bin/ \
+	$HOME/bin \
+	$HOME/.tk"
+for dir in $places; do
+    if test -x $dir/jdoc ; then
+        jdoc=$dir
+        break
+    fi
+done
+if test -z "$jdoc" ; then
+    echo "no"
+    while test -z "$jdoc" ; do
+    	echo $ac_n "Which directory contains jdoc (absolute path)? "
+	read jdoc
+    done
+else
+    echo "$jdoc"
+fi
+AC_SUBST(jdoc)
+
+# Add special libraries for solaris
+#
+
+AC_CHECK_LIB(elf, main, [LIBS="$LIBS -lelf"])
+AC_CHECK_LIB(dl, main, [LIBS="$LIBS -ldl"])
+AC_CHECK_LIB(socket, main, [LIBS="$LIBS -lsocket"])
+AC_CHECK_LIB(nsl, main, [LIBS="$LIBS -lnsl"])
+AC_CHECK_LIB(mopt, main, [LIBS="$LIBS -lmopt"])
+AC_CHECK_LIB(copt, main, [LIBS="$LIBS -lcopt"])
+AC_CHECK_LIB(cx, main, [LIBS="$LIBS -lcx"])
+
+# Check for Multithreading features
+AC_ARG_ENABLE(threads, [  --enable-threads        enable Multithreading],
+	if test "$enable_threads" = yes; then
+		AC_DEFINE(_REENTRANT)
+	fi)
+if test "$enable_threads" = yes; then
+	AC_CHECK_HEADER(pthread.h, AC_DEFINE(POSIX_THREADS))
+	if test "$ac_cv_header_pthread_h" != no; then
+		AC_CHECK_LIB(pthread, main, [LIBS="$LIBS -lpthread"])
+	else enable_threads = no
+	fi
+fi
+if test "$enable_threads" = yes; then
+	AC_DEFINE(MULTITHREADING)
+fi
+
+AC_OUTPUT(Makefile)
